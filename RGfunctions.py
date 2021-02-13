@@ -173,7 +173,7 @@ class Hamiltonian:
         self.count = count
 
 
-def RG(h):
+def renormalization_group(h):
     h_ = copy.deepcopy(h)
     h_.error = ''
     if not fixed_Omega:
@@ -283,8 +283,8 @@ def iterates():
             h_inf, h_sup = approach(h_inf, h_sup, dist=Dist_Surf, strict=True)
             if k_ == 1:
                 print('Critical parameter = {}'.format(2.0 * h_inf.f[K[0]]))
-            h_inf_ = RG(h_inf)
-            h_sup_ = RG(h_sup)
+            h_inf_ = renormalization_group(h_inf)
+            h_sup_ = renormalization_group(h_sup)
             plotf(h_inf_.f[0])
             mean2_p = 2.0 * h_inf.f[2][zero_]
             diff_p = norm(xp.abs(h_inf.f) - xp.abs(h_inf_.f))
@@ -307,8 +307,8 @@ def iterates():
         print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
 
 
-def RG_set(k, set):
-    set[k] = RG(set[k])
+def renormalization_group_set(k, set):
+    set[k] = renormalization_group(set[k])
 
 def approach_set(k, set1, set2, dist, strict):
     set1[k], set2[k] = approach(set1[k], set2[k], dist=dist, strict=strict)
@@ -317,8 +317,8 @@ def iterate_circle():
     start = time.time()
     h_inf, h_sup = generate_2Hamiltonians(K, K_amp_inf, K_amp_sup, Omega)
     h_inf, h_sup = approach(h_inf, h_sup, dist=Dist_Surf, strict=True)
-    h_inf = RG(h_inf)
-    h_sup = RG(h_sup)
+    h_inf = renormalization_group(h_inf)
+    h_sup = renormalization_group(h_sup)
     h_inf, h_sup = approach(h_inf, h_sup, dist=Dist_Circle, strict=True)
     if (not h_inf.error) and (not h_sup.error):
         print('starting circle')
@@ -355,14 +355,14 @@ def iterate_circle():
             ax.plot(Coord[:, 0, i_] / Radius ** 2, Coord[:, 1, i_] / Radius ** 2, label='%d -th iterate' % i_)
             ax.legend()
             plt.pause(1e-17)
-            image_set = partial(RG_set, set=circle_inf)
+            image_set = partial(renormalization_group_set, set=circle_inf)
             pool.map(image_set, range(Nh+1), chunksize=1)
-            image_set = partial(RG_set, set=circle_sup)
+            image_set = partial(renormalization_group_set, set=circle_sup)
             pool.map(image_set, range(Nh+1), chunksize=1)
             approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, dist=Dist_Surf, strict=True)
             pool.map(approach_circle, range(Nh+1), chunksize=1)
-            hc_inf = RG(hc_inf)
-            hc_sup = RG(hc_sup)
+            hc_inf = renormalization_group(hc_inf)
+            hc_sup = renormalization_group(hc_sup)
             hc_inf, hc_sup = approach(hc_inf, hc_sup, dist=Dist_Surf, strict=True)
         end = time.time()
         print("Computation done in {} seconds".format(int(xp.rint(end-start))))
