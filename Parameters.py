@@ -15,7 +15,7 @@ N_cs = 10 # number of points on the critical surface
 K_indx = (0, 1) # indices of K for which the critical surface is computed
 TolCS = 1e-6
 
-Number_of_Iterations = 2
+NumberOfIterations = 2
 
 Save_Data = False
 
@@ -39,9 +39,9 @@ case = 'GoldenMean'
 #case = 'EtaMean'
 
 if case == 'GoldenMean':
-    N = [[1, 1],[1, 0]]
-    eigenvalues = [-0.618033988749895, 1.618033988749895]
-    omega_0 = [eigenvalues[0], 1.0]
+    N = [(1, 1), (1, 0)]
+    eigenvalues = (-0.618033988749895, 1.618033988749895)
+    omega_0 = (eigenvalues[0], 1.0)
 
     #fixed_Omega = True
     #Omega = [eigenvalues[1], 1.0]

@@ -2,7 +2,7 @@ from Parameters import J, L, Sigma, Kappa
 from Parameters import TolLie, TolMin, TolMax, Dist_Surf, precision, MaxIter, MaxLie, norm_choice
 from Parameters import Radius, Modes_Perturb, Nh, Dist_Circle
 from Parameters import K_indx, K_amp_inf, K_amp_sup, N_cs, TolCS, Save_Data
-from Parameters import N, omega_0, eigenvalues, Omega, fixed_Omega, K, Number_of_Iterations
+from Parameters import N, omega_0, eigenvalues, Omega, fixed_Omega, K, NumberOfIterations
 import numpy as xp
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -27,38 +27,35 @@ elif precision == 128:
 else:
     precision_ = xp.float64
 
-N = xp.array(N, dtype=int)
-omega_0 = xp.array(omega_0, dtype=precision_)
-Omega = xp.array(Omega, dtype=precision_)
-eigenvalues = xp.array(eigenvalues, dtype=precision_)
-es = xp.sign(eigenvalues).astype(int)
+N = xp.asarray(N, dtype=int)
+omega_0 = xp.asarray(omega_0, dtype=precision_)
 dim = len(omega_0)
 
 zero_ = dim * (0,)
 one_ = dim * (1,)
 L_ = dim * (L,)
 nL_ = dim * (-L,)
-axisdim = tuple(range(1, dim+1))
+axis_dim = tuple(range(1, dim+1))
 reshape_J = (1,) + dim * (2*L+1,)
 reshape_L = (J+1,) + dim * (1,)
-JLconvdim = xp.index_exp[:J+1] + dim * xp.index_exp[L:3*L+1]
+conv_dim = xp.index_exp[:J+1] + dim * xp.index_exp[L:3*L+1]
 
-Index = xp.hstack((xp.arange(0, L+1), xp.arange(-L, 0)))
-Index_ = dim * (Index,)
-Nu = xp.meshgrid(*Index_, indexing='ij')
-N_Nu = es[0] * xp.einsum('ij,j...->i...', N, Nu)
-omega_0_Nu = xp.einsum('i,i...->...', omega_0, Nu).reshape(reshape_J)
-mask = xp.prod(abs(N_Nu) <= L, axis=0, dtype=bool)
-norm_Nu = xp.sqrt(xp.sum(xp.array(Nu)**2, axis=0)).reshape(reshape_J)
+indx = xp.hstack((xp.arange(0, L+1), xp.arange(-L, 0)))
+indx_ = dim * (indx,)
+nu = xp.meshgrid(*indx_, indexing='ij')
+N_nu = xp.sign(eigenvalues[0]).astype(int) * xp.einsum('ij,j...->i...', N, nu)
+omega_0_nu = xp.einsum('i,i...->...', omega_0, nu).reshape(reshape_J)
+mask = xp.prod(abs(N_nu) <= L, axis=0, dtype=bool)
+norm_nu = xp.sqrt(xp.sum(xp.array(nu)**2, axis=0)).reshape(reshape_J)
 J_ = xp.arange(J+1, dtype=precision_).reshape(reshape_L)
-CompIm = Sigma * xp.repeat(norm_Nu, J+1, axis=0) + Kappa * J_
-omega_0_Nu_ = xp.repeat(xp.abs(omega_0_Nu), J+1, axis=0) / xp.sqrt((omega_0 ** 2).sum())
-Iminus = omega_0_Nu_ > CompIm
-Nu_mask = xp.index_exp[:J+1]
-N_Nu_mask = xp.index_exp[:J+1]
+comp_im = Sigma * xp.repeat(norm_nu, J+1, axis=0) + Kappa * J_
+omega_0_nu_ = xp.repeat(xp.abs(omega_0_nu), J+1, axis=0) / xp.sqrt((omega_0 ** 2).sum())
+iminus = omega_0_nu_ > comp_im
+nu_mask = xp.index_exp[:J+1]
+N_nu_mask = xp.index_exp[:J+1]
 for it in range(dim):
-    Nu_mask += (Nu[it][mask],)
-    N_Nu_mask += (N_Nu[it][mask],)
+    nu_mask += (nu[it][mask],)
+    N_nu_mask += (N_nu[it][mask],)
 
 def plotf(fun):
     plt.rcParams.update({'font.size': 22})
@@ -92,18 +89,18 @@ def plotf(fun):
 
 
 def conv_product(fun1, fun2):
-    fun1_ = xp.roll(fun1, L_, axis=axisdim)
-    fun2_ = xp.roll(fun2, L_, axis=axisdim)
+    fun1_ = xp.roll(fun1, L_, axis=axis_dim)
+    fun2_ = xp.roll(fun2, L_, axis=axis_dim)
     fun3_ = sps.convolve(fun1_, fun2_, mode='full', method='auto')
-    return xp.roll(fun3_[JLconvdim], nL_, axis=axisdim)
+    return xp.roll(fun3_[conv_dim], nL_, axis=axis_dim)
 
 
 def converge(h, display=False):
     h_ = copy.deepcopy(h)
-    h_.error = ''
+    h_.error = None
     itconv = 0
     while (TolMax > norm_int(h_.f) > TolMin) and (not h_.error):
-        h_ = RG(h_)
+        h_ = renormalization_group(h_)
         itconv += 1
         if display:
             print("norm = {:4e}".format(norm_int(h_.f)))
@@ -120,7 +117,7 @@ def converge(h, display=False):
 def approach(h_inf, h_sup, dist=Dist_Surf, strict=False):
     h_inf_ = copy.deepcopy(h_inf)
     h_sup_ = copy.deepcopy(h_sup)
-    h_inf_.error = ''
+    h_inf_.error = None
     h_mid_ = copy.deepcopy(h_inf_)
     while norm(h_inf_.f - h_sup_.f) >= dist:
         h_mid_.f = (h_inf_.f + h_sup_.f) / 2.0
@@ -138,7 +135,7 @@ def approach(h_inf, h_sup, dist=Dist_Surf, strict=False):
     if converge(h_sup_):
         print('Warning (approach): h_sup not above crit. surf.')
     else:
-        h_sup_.error = ''
+        h_sup_.error = None
     return h_inf_, h_sup_
 
 
@@ -150,7 +147,7 @@ def norm(fun):
     elif norm_choice == 'Euclidian':
         return xp.sqrt((xp.abs(fun) ** 2).sum())
     else:
-        return (xp.exp(xp.log(xp.abs(fun)) + norm_choice * xp.sum(xp.abs(Nu), axis=0)).reshape(reshape_J)).max()
+        return (xp.exp(xp.log(xp.abs(fun)) + norm_choice * xp.sum(xp.abs(nu), axis=0)).reshape(reshape_J)).max()
 
 
 def norm_int(fun):
@@ -160,7 +157,7 @@ def norm_int(fun):
 
 
 def sym(fun):
-    fun_ = (fun + xp.roll(xp.flip(fun, axis=axisdim), 1, axis=axisdim).conj()) / 2.0
+    fun_ = (fun + xp.roll(xp.flip(fun, axis=axis_dim), 1, axis=axis_dim).conj()) / 2.0
     fun_[0][zero_] = 0.0
     return fun_
 
@@ -175,7 +172,7 @@ class Hamiltonian:
 
 def renormalization_group(h):
     h_ = copy.deepcopy(h)
-    h_.error = ''
+    h_.error = None
     if not fixed_Omega:
         Omega_ = (N.transpose()).dot(h_.Omega)
         ren = (2.0 * xp.sqrt((Omega_ ** 2).sum()) / eigenvalues[0] * h_.f[2][zero_]) \
@@ -185,32 +182,32 @@ def renormalization_group(h):
         ren = (2.0 * eigenvalues[1] / eigenvalues[0] * h_.f[2][zero_]) \
                 ** (2 - xp.arange(J+1, dtype=int)) / (2.0 * h_.f[2][zero_])
     f_ = xp.zeros_like(h_.f)
-    f_[Nu_mask] = h_.f[N_Nu_mask]
+    f_[nu_mask] = h_.f[N_nu_mask]
     f_ *= ren.reshape(reshape_L)
-    Omega_Nu = xp.einsum('i,i...->...', h_.Omega, Nu).reshape(reshape_J)
+    Omega_nu = xp.einsum('i,i...->...', h_.Omega, nu).reshape(reshape_J)
     km_ = 0
-    Iminus_f = xp.zeros_like(f_)
-    Iminus_f[Iminus] = f_[Iminus]
-    while (TolMax > norm(Iminus_f) > TolMin) and (TolMax > norm(f_) > TolMin) and (km_ < MaxIter) and (not h_.error):
+    iminus_f = xp.zeros_like(f_)
+    iminus_f[iminus] = f_[iminus]
+    while (TolMax > norm(iminus_f) > TolMin) and (TolMax > norm(f_) > TolMin) and (km_ < MaxIter) and (not h_.error):
         y_ = xp.zeros_like(f_)
         ao2 = - f_[1][zero_] / (2.0 * f_[2][zero_])
-        y_[0][Iminus[0]] = f_[0][Iminus[0]] / omega_0_Nu[0][Iminus[0]]
+        y_[0][iminus[0]] = f_[0][iminus[0]] / omega_0_nu[0][iminus[0]]
         for m in range(1, J+1):
-            y_[m][Iminus[m]] = (f_[m][Iminus[m]] - 2.0 * f_[2][zero_] * Omega_Nu[0][Iminus[m]] * y_[m-1][Iminus[m]])\
-                                / omega_0_Nu[0][Iminus[m]]
+            y_[m][iminus[m]] = (f_[m][iminus[m]] - 2.0 * f_[2][zero_] * Omega_nu[0][iminus[m]] * y_[m-1][iminus[m]])\
+                                / omega_0_nu[0][iminus[m]]
         y_t = xp.roll(y_ * J_, -1, axis=0)
         f_t = xp.roll(f_ * J_, -1, axis=0)
-        y_o = Omega_Nu * y_
-        f_o = Omega_Nu * f_
-        g_ = ao2 * f_t - omega_0_Nu * y_ + conv_product(y_t, f_o) - conv_product(y_o, f_t)
+        y_o = Omega_nu * y_
+        f_o = Omega_nu * f_
+        g_ = ao2 * f_t - omega_0_nu * y_ + conv_product(y_t, f_o) - conv_product(y_o, f_t)
         k_ = 2
         while (TolMax > norm(g_) > TolLie) and (TolMax > norm(f_) > TolMin) and (k_ < MaxLie):
             f_ += g_
             g_t = xp.roll(g_ * J_, -1, axis=0)
-            g_o = Omega_Nu * g_
+            g_o = Omega_nu * g_
             g_ = (ao2 * g_t + conv_product(y_t, g_o) - conv_product(y_o, g_t)) / precision_(k_)
             k_ += 1
-        Iminus_f[Iminus] = f_[Iminus]
+        iminus_f[iminus] = f_[iminus]
         km_ += 1
         f_ = sym(f_)
         if not (norm(g_) <= TolLie):
@@ -218,8 +215,8 @@ def renormalization_group(h):
                 h_.error = 'Lie transform diverging ({}-th)'.format(km_)
             elif (k_ >= MaxLie):
                 h_.error = 'Lie transform not converging ({}-th)'.format(km_)
-    if (not (norm(Iminus_f) <= TolMin)) and (not h_.error):
-        if (norm(Iminus_f) >= TolMax):
+    if (not (norm(iminus_f) <= TolMin)) and (not h_.error):
+        if (norm(iminus_f) >= TolMax):
             h_.error = 'I- iterations diverging'
         elif (km_ >= MaxIter):
             h_.error = 'I- iterations not converging'
@@ -244,7 +241,7 @@ def generate_1Hamiltonian(k_modes, k_amp, omega, symmetric=False):
 def generate_2Hamiltonians(k_modes, k_amp_inf, k_amp_sup, omega):
     h_inf = generate_1Hamiltonian(k_modes, k_amp_inf, omega, symmetric=True)
     h_sup = generate_1Hamiltonian(k_modes, k_amp_sup, omega, symmetric=True)
-    h_sup.error = ''
+    h_sup.error = None
     if not converge(h_inf):
         if not h_inf.error:
             h_inf.error = 'problem in generate_2Hamiltonians'
@@ -277,7 +274,7 @@ def iterates():
         plotf(h_sup.f[0])
         start = time.time()
         k_ = 0
-        while (k_ < Number_of_Iterations) and (not h_inf.error) and (not h_sup.error):
+        while (k_ < NumberOfIterations) and (not h_inf.error) and (not h_sup.error):
             k_ += 1
             start_k = time.time()
             h_inf, h_sup = approach(h_inf, h_sup, dist=Dist_Surf, strict=True)
@@ -295,7 +292,7 @@ def iterates():
             data.append([diff_p, delta_p, mean2_p])
             print("diff = %.3e    delta = %.7f   <f2> = %.7f    (done in %d seconds)" % \
                     (diff_p, delta_p, mean2_p, int(xp.rint(end_k-start_k))))
-        if (k_ < Number_of_Iterations):
+        if (k_ < NumberOfIterations):
             print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
         end = time.time()
         print("Computation done in {} seconds".format(int(xp.rint(end-start))))
@@ -345,8 +342,8 @@ def iterate_circle():
         pool = multiprocessing.Pool(num_cores)
         approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, dist=Dist_Surf, strict=True)
         pool.imap(approach_circle, range(Nh+1))
-        Coord = xp.zeros((Nh+1, 2, Number_of_Iterations))
-        for i_ in tqdm(range(Number_of_Iterations)):
+        Coord = xp.zeros((Nh+1, 2, NumberOfIterations))
+        for i_ in tqdm(range(NumberOfIterations)):
             for k_ in range(Nh+1):
                 Coord[k_, :, i_] = [xp.vdot(circle_inf[k_].f - hc_inf.f, v1), xp.vdot(circle_inf[k_].f - hc_inf.f, v2)]
             save_data('RG_circle', Coord / Radius ** 2)
