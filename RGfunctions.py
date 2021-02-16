@@ -15,7 +15,7 @@ import warnings
 from datetime import date
 import multiprocessing
 from functools import partial
-from tqdm import tqdm
+from tqdm import tqdm, trange
 warnings.filterwarnings("ignore")
 
 num_cores = multiprocessing.cpu_count()
@@ -253,7 +253,7 @@ def generate_2Hamiltonians(k_modes, k_amp_inf, k_amp_sup, omega):
     return h_inf, h_sup
 
 
-def save_data(name, data, info=[]):
+def save_data(name, data, timestr, info=[]):
     mdic = {'L': L, 'J': J, 'TolMax': TolMax, 'TolMin': TolMin, 'TolLie': TolLie, 'DistSurf': DistSurf, \
             'MaxLie': MaxLie, 'MaxIter': MaxIter, 'Sigma': Sigma, 'Kappa': Kappa}
     mdic.update({'DistCircle': DistCircle, 'Radius': Radius, 'ModesPerturb': ModesPerturb})
@@ -262,7 +262,6 @@ def save_data(name, data, info=[]):
     mdic.update({'info': info})
     today = date.today()
     date_today = today.strftime(" %B %d, %Y\n")
-    timestr = time.strftime("%Y%m%d_%H%M")
     email = ' cristel.chandre@univ-amu.fr'
     mdic.update({'date': date_today, 'author': email})
     if SaveData:
@@ -301,7 +300,8 @@ def iterates():
         end = time.time()
         print("Computation done in {} seconds".format(int(xp.rint(end-start))))
         info = 'diff     delta     <f2>'
-        save_data('RG_iterates', data, info=info)
+        timestr = time.strftime("%Y%m%d_%H%M")
+        save_data('RG_iterates', data, timestr, info=info)
         plt.ioff()
         plt.show()
     else:
@@ -323,6 +323,7 @@ def iterate_circle():
     h_inf, h_sup = approach(h_inf, h_sup, dist=DistCircle, strict=True)
     if (not h_inf.error) and (not h_sup.error):
         print('starting circle')
+        timestr = time.strftime("%Y%m%d_%H%M")
         hc_inf, hc_sup = approach(h_inf, h_sup, dist=DistSurf, strict=True)
         v1 = xp.zeros((J+1,) + dim * (2*L+1,), dtype=precision_)
         v2 = xp.zeros((J+1,) + dim * (2*L+1,), dtype=precision_)
@@ -347,21 +348,27 @@ def iterate_circle():
         approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, dist=DistSurf, strict=True)
         pool.imap(approach_circle, range(Nh+1))
         Coord = xp.zeros((Nh+1, 2, NumberOfIterations))
-        for i_ in tqdm(range(NumberOfIterations)):
+        for i_ in trange(NumberOfIterations):
             for k_ in range(Nh+1):
                 Coord[k_, :, i_] = [xp.vdot(circle_inf[k_].f - hc_inf.f, v1), xp.vdot(circle_inf[k_].f - hc_inf.f, v2)]
-            save_data('RG_circle', Coord / Radius ** 2)
+            save_data('RG_circle', Coord / Radius ** 2, timestr)
             fig = plt.figure()
             ax = fig.add_subplot(111)
             ax.plot(Coord[:, 0, i_] / Radius ** 2, Coord[:, 1, i_] / Radius ** 2, label='%d -th iterate' % i_)
             ax.legend()
             plt.pause(1e-17)
             image_set = partial(renormalization_group_set, set=circle_inf)
-            pool.map(image_set, range(Nh+1), chunksize=1)
+            for result in tqdm(pool.imap(func=image_set, iterable=range(Nh+1)), total=Nh+1, desc='Inf: '):
+                pass
+            #pool.map(image_set, range(Nh+1), chunksize=1)
             image_set = partial(renormalization_group_set, set=circle_sup)
-            pool.map(image_set, range(Nh+1), chunksize=1)
+            for result in tqdm(pool.imap(func=image_set, iterable=range(Nh+1)), total=Nh+1, desc='Sup: '):
+                pass
+            #pool.map(image_set, range(Nh+1), chunksize=1)
             approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, dist=DistSurf, strict=True)
-            pool.map(approach_circle, range(Nh+1), chunksize=1)
+            for result in tqdm(pool.imap(func=approach_circle, iterable=range(Nh+1)), total=Nh+1, desc='Approach: '):
+                pass
+            #pool.map(approach_circle, range(Nh+1), chunksize=1)
             hc_inf = renormalization_group(hc_inf)
             hc_sup = renormalization_group(hc_sup)
             hc_inf, hc_sup = approach(hc_inf, hc_sup, dist=DistSurf, strict=True)
@@ -389,13 +396,14 @@ def critical_surface():
     if len(Kindx) != 2:
         print('Warning: 2 modes are required for the critical surface')
     else:
+        timestr = time.strftime("%Y%m%d_%H%M")
         epsilon_ = xp.linspace(0.0, 1.0, Ncs)
         pool = multiprocessing.Pool(num_cores)
         data = []
         for result in tqdm(pool.imap(func=compute_cr, iterable=epsilon_), total=len(epsilon_)):
             data.append(result)
         data = xp.array(data).transpose()
-        save_data('RG_critical_surface', data)
+        save_data('RG_critical_surface', data, timestr)
         fig = plt.figure()
         ax = fig.gca()
         ax.set_box_aspect(1)
@@ -416,21 +424,22 @@ def converge_region():
     if len(Kindx) != 2:
         print('Warning: 2 modes are required for converge_region')
     else:
+        timestr = time.strftime("%Y%m%d_%H%M")
         epsilon_ = xp.linspace(0.0, 1.0, Ncs)
         pool = multiprocessing.Pool(num_cores)
         data = []
-        for i_ in tqdm(range(Ncs)):
+        for i_ in trange(Ncs):
             epsilon2_ = epsilon_[i_]
             converge_point_ = partial(converge_point, epsilon2=epsilon2_)
-            data_temp = pool.map(converge_point_, epsilon_)
-            data.append(data_temp)
-        save_data('RG_layer', data)
+            for result in tqdm(pool.imap(func=converge_point_, iterable=epsilon_), total=len(epsilon_), leave=False):
+                data.append(result)
+            save_data('RG_layer', data, timestr)
         fig = plt.figure()
         ax = fig.gca()
         ax.set_box_aspect(1)
         x_vec = xp.linspace(KampInf[Kindx[0]], KampSup[Kindx[0]], Ncs)
         y_vec = xp.linspace(KampInf[Kindx[1]], KampSup[Kindx[1]], Ncs)
-        im = ax.pcolor(x_vec, y_vec, xp.array(data)[:, :, 0], cmap='Reds_r')
+        im = ax.pcolor(x_vec, y_vec, xp.array(data)[:, 0].reshape((Ncs, Ncs)), cmap='Reds_r')
         ax.set_xlim(KampInf[Kindx[0]], KampSup[Kindx[0]])
         ax.set_ylim(KampInf[Kindx[1]], KampSup[Kindx[1]])
         fig.colorbar(im)
