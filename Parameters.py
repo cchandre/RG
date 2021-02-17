@@ -1,15 +1,15 @@
-J = 7
-L = 7
+J = 5
+L = 5
 
 Sigma = 0.4
 Kappa = 0.1
 
-TolLie = 1e-16
+TolLie = 1e-17
 TolMin = 1e-15
 TolMax = 1e+10
-DistSurf = 1e-9
 MaxLie = 50000
 MaxIter = 50000
+DistSurf = 1e-9
 
 ## Parameters used in iterate_circle
 DistCircle = 1e-5 # distance of the circle from the surface
@@ -22,7 +22,7 @@ Ncs = 50 # number of points on the critical surface or converge region
 Kindx = (0, 1) # indices of K for which the critical surface / converge region is computed
 TolCS = 1e-6
 
-NumberOfIterations = 20
+NumberOfIterations = 10
 
 SaveData = True
 
@@ -33,8 +33,8 @@ NormChoice = 'sum'
 
 Precision = 64 #@param ["32", "64", "128"] {type:"raw"}
 
-#Case = 'GoldenMean'
-Case = 'SpiralMean'
+Case = 'GoldenMean'
+#Case = 'SpiralMean'
 #Case = 'OMean'
 #Case = 'TauMean'
 #Case = 'EtaMean'
@@ -64,8 +64,8 @@ elif Case == 'SpiralMean':
     Omega = [1.0, 1.0, -1.0]
 
     K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
-    KampInf = [0.03, 0.087, 0.1]
-    KampSup = [0.04, 0.092, 0.1]
+    KampInf = [0.034, 0.089, 0.1]
+    KampSup = [0.036, 0.091, 0.1]
     #K = ((0, 0, 1, -1), (0, 1, -1, 0), (0, 1, -1, -1))
 
 elif Case == 'TauMean':

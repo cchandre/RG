@@ -9,13 +9,13 @@ import matplotlib.colors as colors
 from matplotlib import cm
 import scipy.signal as sps
 from scipy.io import savemat
-import time
 import copy
-import warnings
+import time
 from datetime import date
 import multiprocessing
 from functools import partial
 from tqdm import tqdm, trange
+import warnings
 warnings.filterwarnings("ignore")
 
 num_cores = multiprocessing.cpu_count()
@@ -40,9 +40,8 @@ reshape_J = (1,) + dim * (2*L+1,)
 reshape_L = (J+1,) + dim * (1,)
 conv_dim = xp.index_exp[:J+1] + dim * xp.index_exp[L:3*L+1]
 
-indx = xp.hstack((xp.arange(0, L+1), xp.arange(-L, 0)))
-indx_ = dim * (indx,)
-nu = xp.meshgrid(*indx_, indexing='ij')
+indx = dim * (xp.hstack((xp.arange(0, L+1), xp.arange(-L, 0))),)
+nu = xp.meshgrid(*indx, indexing='ij')
 N_nu = xp.sign(Eigenvalues[0]).astype(int) * xp.einsum('ij,j...->i...', N, nu)
 omega_0_nu = xp.einsum('i,i...->...', omega_0, nu).reshape(reshape_J)
 mask = xp.prod(abs(N_nu) <= L, axis=0, dtype=bool)
@@ -97,11 +96,11 @@ def conv_product(fun1, fun2):
 
 def converge(h, display=False):
     h_ = copy.deepcopy(h)
-    h_.error = None
-    itconv = 0
+    h_.error = ''
+    h.count = 0
     while (TolMax > norm_int(h_.f) > TolMin) and (not h_.error):
         h_ = renormalization_group(h_)
-        itconv += 1
+        h.count += 1
         if display:
             print("norm = {:4e}".format(norm_int(h_.f)))
     if (norm_int(h_.f) <= TolMin) and (not h_.error):
@@ -110,14 +109,13 @@ def converge(h, display=False):
         return False
     else:
         h.error = h_.error
-        h.count = itconv
         return False
 
 
 def approach(h_inf, h_sup, dist=DistSurf, strict=False):
     h_inf_ = copy.deepcopy(h_inf)
     h_sup_ = copy.deepcopy(h_sup)
-    h_inf_.error = None
+    h_inf_.error = ''
     h_mid_ = copy.deepcopy(h_inf_)
     while norm(h_inf_.f - h_sup_.f) >= dist:
         h_mid_.f = (h_inf_.f + h_sup_.f) / 2.0
@@ -136,7 +134,7 @@ def approach(h_inf, h_sup, dist=DistSurf, strict=False):
         print('Warning (approach): h_sup not above crit. surf.')
         h_sup_.error = 'below (approach)'
     else:
-        h_sup_.error = None
+        h_sup_.error = ''
     return h_inf_, h_sup_
 
 
@@ -173,7 +171,7 @@ class Hamiltonian:
 
 def renormalization_group(h):
     h_ = copy.deepcopy(h)
-    h_.error = None
+    h_.error = ''
     if not FixedOmega:
         omega_ = (N.transpose()).dot(h_.Omega)
         ren = (2.0 * xp.sqrt((omega_ ** 2).sum()) / Eigenvalues[0] * h_.f[2][zero_]) \
@@ -189,6 +187,7 @@ def renormalization_group(h):
     km_ = 0
     iminus_f = xp.zeros_like(f_)
     iminus_f[iminus] = f_[iminus]
+    pool = multiprocessing.Pool(2)
     while (TolMax > norm(iminus_f) > TolMin) and (TolMax > norm(f_) > TolMin) and (km_ < MaxIter) and (not h_.error):
         y_ = xp.zeros_like(f_)
         ao2 = - f_[1][zero_] / (2.0 * f_[2][zero_])
@@ -200,19 +199,19 @@ def renormalization_group(h):
         f_t = xp.roll(f_ * J_, -1, axis=0)
         y_o = omega_nu * y_
         f_o = omega_nu * f_
-        g_ = ao2 * f_t - omega_0_nu * y_ + conv_product(y_t, f_o) - conv_product(y_o, f_t)
+        sh_ = ao2 * f_t - omega_0_nu * y_ + conv_product(y_t, f_o) - conv_product(y_o, f_t)
         k_ = 2
-        while (TolMax > norm(g_) > TolLie) and (TolMax > norm(f_) > TolMin) and (k_ < MaxLie):
-            f_ += g_
-            g_t = xp.roll(g_ * J_, -1, axis=0)
-            g_o = omega_nu * g_
-            g_ = (ao2 * g_t + conv_product(y_t, g_o) - conv_product(y_o, g_t)) / precision_(k_)
+        while (TolMax > norm(sh_) > TolLie) and (TolMax > norm(f_) > TolMin) and (k_ < MaxLie):
+            f_ += sh_
+            sh_t = xp.roll(sh_ * J_, -1, axis=0)
+            sh_o = omega_nu * sh_
+            sh_ = (ao2 * sh_t + conv_product(y_t, sh_o) - conv_product(y_o, sh_t)) / precision_(k_)
             k_ += 1
         iminus_f[iminus] = f_[iminus]
         km_ += 1
         f_ = sym(f_)
-        if not (norm(g_) <= TolLie):
-            if (norm(g_) >= TolMax):
+        if not (norm(sh_) <= TolLie):
+            if (norm(sh_) >= TolMax):
                 h_.error = 'Lie transform diverging ({}-th)'.format(km_)
             elif (k_ >= MaxLie):
                 h_.error = 'Lie transform not converging ({}-th)'.format(km_)
@@ -242,14 +241,12 @@ def generate_1Hamiltonian(k_modes, k_amp, omega, symmetric=False):
 def generate_2Hamiltonians(k_modes, k_amp_inf, k_amp_sup, omega):
     h_inf = generate_1Hamiltonian(k_modes, k_amp_inf, omega, symmetric=True)
     h_sup = generate_1Hamiltonian(k_modes, k_amp_sup, omega, symmetric=True)
-    h_sup.error = None
     if not converge(h_inf):
-        if not h_inf.error:
-            h_inf.error = 'above (generate_2Hamiltonians)'
+        h_inf.error = 'above (generate_2Hamiltonians)'
     if converge(h_sup):
         h_sup.error = 'below (generate_2Hamiltonians)'
     else:
-        h_sup.error = None
+        h_sup.error = ''
     return h_inf, h_sup
 
 
@@ -272,27 +269,26 @@ def iterates():
     h_inf, h_sup = generate_2Hamiltonians(K, KampInf, KampSup, Omega)
     if (not h_inf.error) and (not h_sup.error):
         plt.close('all')
-        data = []
-        print('starting iterations...')
         plotf(h_sup.f[0])
         start = time.time()
+        data = []
         k_ = 0
         while (k_ < NumberOfIterations) and (not h_inf.error) and (not h_sup.error):
             k_ += 1
             start_k = time.time()
             h_inf, h_sup = approach(h_inf, h_sup, dist=DistSurf, strict=True)
-            if k_ == 1:
-                print('Critical parameter = {}'.format(2.0 * h_inf.f[K[0]]))
             h_inf_ = renormalization_group(h_inf)
             h_sup_ = renormalization_group(h_sup)
+            if k_ == 1:
+                print('Critical parameter = {}'.format(2.0 * h_inf.f[K[0]]))
             plotf(h_inf_.f[0])
             mean2_p = 2.0 * h_inf.f[2][zero_]
             diff_p = norm(xp.abs(h_inf.f) - xp.abs(h_inf_.f))
             delta_p = norm(xp.abs(h_inf_.f) - xp.abs(h_sup_.f)) / norm(h_inf.f - h_sup.f)
+            data.append([diff_p, delta_p, mean2_p])
             h_inf = copy.deepcopy(h_inf_)
             h_sup = copy.deepcopy(h_sup_)
             end_k = time.time()
-            data.append([diff_p, delta_p, mean2_p])
             print("diff = %.3e    delta = %.7f   <f2> = %.7f    (done in %d seconds)" % \
                     (diff_p, delta_p, mean2_p, int(xp.rint(end_k-start_k))))
         if (k_ < NumberOfIterations):
@@ -302,14 +298,10 @@ def iterates():
         info = 'diff     delta     <f2>'
         timestr = time.strftime("%Y%m%d_%H%M")
         save_data('RG_iterates', data, timestr, info=info)
-        plt.ioff()
         plt.show()
     else:
         print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
 
-
-def renormalization_group_set(k, set):
-    set[k] = renormalization_group(set[k])
 
 def approach_set(k, set1, set2, dist, strict):
     set1[k], set2[k] = approach(set1[k], set2[k], dist=dist, strict=strict)
@@ -327,8 +319,8 @@ def iterate_circle():
         hc_inf, hc_sup = approach(h_inf, h_sup, dist=DistSurf, strict=True)
         v1 = xp.zeros((J+1,) + dim * (2*L+1,), dtype=precision_)
         v2 = xp.zeros((J+1,) + dim * (2*L+1,), dtype=precision_)
-        v1[0][dim * xp.index_exp[:Modes_Perturb]] = 2.0 * xp.random.random(dim * (ModesPerturb,)) - 1.0
-        v2[0][dim * xp.index_exp[:Modes_Perturb]] = 2.0 * xp.random.random(dim * (ModesPerturb,)) - 1.0
+        v1[0][dim * xp.index_exp[:ModesPerturb]] = 2.0 * xp.random.random(dim * (ModesPerturb,)) - 1.0
+        v2[0][dim * xp.index_exp[:ModesPerturb]] = 2.0 * xp.random.random(dim * (ModesPerturb,)) - 1.0
         v1 = sym(v1)
         v2 = sym(v2)
         v2 = v2 - xp.vdot(v2, v1) * v1 / xp.vdot(v1, v1)
@@ -357,24 +349,15 @@ def iterate_circle():
             ax.plot(Coord[:, 0, i_] / Radius ** 2, Coord[:, 1, i_] / Radius ** 2, label='%d -th iterate' % i_)
             ax.legend()
             plt.pause(1e-17)
-            image_set = partial(renormalization_group_set, set=circle_inf)
-            for result in tqdm(pool.imap(func=image_set, iterable=range(Nh+1)), total=Nh+1, desc='Inf: '):
-                pass
-            #pool.map(image_set, range(Nh+1), chunksize=1)
-            image_set = partial(renormalization_group_set, set=circle_sup)
-            for result in tqdm(pool.imap(func=image_set, iterable=range(Nh+1)), total=Nh+1, desc='Sup: '):
-                pass
-            #pool.map(image_set, range(Nh+1), chunksize=1)
+            circle_inf = pool.imap(renormalization_group, iterable=circle_inf)
+            circle_sup = pool.imap(renormalization_group, iterable=circle_sup)
             approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, dist=DistSurf, strict=True)
-            for result in tqdm(pool.imap(func=approach_circle, iterable=range(Nh+1)), total=Nh+1, desc='Approach: '):
-                pass
-            #pool.map(approach_circle, range(Nh+1), chunksize=1)
+            pool.imap(approach_circle, iterable=range(Nh+1))
             hc_inf = renormalization_group(hc_inf)
             hc_sup = renormalization_group(hc_sup)
             hc_inf, hc_sup = approach(hc_inf, hc_sup, dist=DistSurf, strict=True)
         end = time.time()
         print("Computation done in {} seconds".format(int(xp.rint(end-start))))
-        plt.ioff()
         plt.show()
     else:
         print('Warning (iterate_circle): ' + h_inf.error + ' / ' + h_sup.error)
@@ -400,7 +383,7 @@ def critical_surface():
         epsilon_ = xp.linspace(0.0, 1.0, Ncs)
         pool = multiprocessing.Pool(num_cores)
         data = []
-        for result in tqdm(pool.imap(func=compute_cr, iterable=epsilon_), total=len(epsilon_)):
+        for result in tqdm(pool.imap(compute_cr, iterable=epsilon_), total=len(epsilon_)):
             data.append(result)
         data = xp.array(data).transpose()
         save_data('RG_critical_surface', data, timestr)
@@ -418,7 +401,7 @@ def converge_point(epsilon1, epsilon2):
     k_amp_[Kindx[0]] = KampInf[Kindx[0]] + epsilon1 * (KampSup[Kindx[0]] - KampInf[Kindx[0]])
     k_amp_[Kindx[1]] = KampInf[Kindx[1]] + epsilon2 * (KampSup[Kindx[1]] - KampInf[Kindx[1]])
     h_ = generate_1Hamiltonian(K, k_amp_, Omega, symmetric=True)
-    return [converge(h_), h_.count]
+    return [converge(h_), h_.count, h_.error]
 
 def converge_region():
     if len(Kindx) != 2:
@@ -431,9 +414,9 @@ def converge_region():
         for i_ in trange(Ncs):
             epsilon2_ = epsilon_[i_]
             converge_point_ = partial(converge_point, epsilon2=epsilon2_)
-            for result in tqdm(pool.imap(func=converge_point_, iterable=epsilon_), total=len(epsilon_), leave=False):
+            for result in tqdm(pool.imap(converge_point_, iterable=epsilon_), total=len(epsilon_), leave=False):
                 data.append(result)
-            save_data('RG_layer', data, timestr)
+            save_data('RG_converge_region', data, timestr)
         fig = plt.figure()
         ax = fig.gca()
         ax.set_box_aspect(1)
