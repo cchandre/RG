@@ -4,7 +4,7 @@ L = 5
 Sigma = 0.4
 Kappa = 0.1
 
-TolLie = 1e-17
+TolLie = 1e-16
 TolMin = 1e-15
 TolMax = 1e+10
 MaxLie = 50000
@@ -18,13 +18,14 @@ ModesPerturb = 3 #number of modes in the perturbation
 Nh = 10 #points on the circle
 
 ## Parameters used in critical_surface and converge_region
-Ncs = 50 # number of points on the critical surface or converge region
+Ncs = 30 # number of points on the critical surface or converge region
 Kindx = (0, 1) # indices of K for which the critical surface / converge region is computed
 TolCS = 1e-6
 
 NumberOfIterations = 10
 
 SaveData = True
+PlotResults = False
 
 #NormChoice = 'max'
 NormChoice = 'sum'

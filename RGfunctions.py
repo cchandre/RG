@@ -1,7 +1,7 @@
 from Parameters import J, L, Sigma, Kappa, Case
 from Parameters import TolLie, TolMin, TolMax, DistSurf, Precision, MaxIter, MaxLie, NormChoice
 from Parameters import Radius, ModesPerturb, Nh, DistCircle
-from Parameters import Kindx, KampInf, KampSup, Ncs, TolCS, SaveData
+from Parameters import Kindx, KampInf, KampSup, Ncs, TolCS, SaveData, PlotResults
 from Parameters import N, Omega0, Eigenvalues, Omega, FixedOmega, K, NumberOfIterations
 import numpy as xp
 import matplotlib.pyplot as plt
@@ -58,7 +58,7 @@ for it in range(dim):
 
 def plotf(fun):
     plt.rcParams.update({'font.size': 22})
-    if dim == 2:
+    if dim == 2 and PlotResults:
         fig, ax = plt.subplots(1,1)
         ax.set_xlim(-L, L)
         ax.set_ylim(-L, L)
@@ -66,7 +66,7 @@ def plotf(fun):
         im = ax.imshow(xp.abs(xp.roll(fun, (L, L), axis=(0,1))).transpose(), origin='lower', extent=[-L, L, -L, L], \
                         norm=colors.LogNorm(vmin=TolMin, vmax=xp.abs(fun).max()), cmap=color_map)
         fig.colorbar(im, orientation='vertical')
-    elif dim == 3:
+    elif dim == 3 and PlotResults:
         Y, Z = xp.meshgrid(xp.arange(-L, L+1), xp.arange(-L, L+1))
         X = xp.zeros_like(Y)
         fig = plt.figure()
@@ -97,10 +97,10 @@ def conv_product(fun1, fun2):
 def converge(h, display=False):
     h_ = copy.deepcopy(h)
     h_.error = ''
-    h.count = 0
+    it_conv = 0
     while (TolMax > norm_int(h_.f) > TolMin) and (not h_.error):
         h_ = renormalization_group(h_)
-        h.count += 1
+        it_conv += 1
         if display:
             print("norm = {:4e}".format(norm_int(h_.f)))
     if (norm_int(h_.f) <= TolMin) and (not h_.error):
@@ -108,6 +108,7 @@ def converge(h, display=False):
     elif (norm_int(h_.f) >= TolMax) and (not h_.error):
         return False
     else:
+        h.count = it_conv
         h.error = h_.error
         return False
 
@@ -187,7 +188,6 @@ def renormalization_group(h):
     km_ = 0
     iminus_f = xp.zeros_like(f_)
     iminus_f[iminus] = f_[iminus]
-    pool = multiprocessing.Pool(2)
     while (TolMax > norm(iminus_f) > TolMin) and (TolMax > norm(f_) > TolMin) and (km_ < MaxIter) and (not h_.error):
         y_ = xp.zeros_like(f_)
         ao2 = - f_[1][zero_] / (2.0 * f_[2][zero_])
@@ -268,6 +268,7 @@ def save_data(name, data, timestr, info=[]):
 def iterates():
     h_inf, h_sup = generate_2Hamiltonians(K, KampInf, KampSup, Omega)
     if (not h_inf.error) and (not h_sup.error):
+        timestr = time.strftime("%Y%m%d_%H%M")
         plt.close('all')
         plotf(h_sup.f[0])
         start = time.time()
@@ -291,13 +292,12 @@ def iterates():
             end_k = time.time()
             print("diff = %.3e    delta = %.7f   <f2> = %.7f    (done in %d seconds)" % \
                     (diff_p, delta_p, mean2_p, int(xp.rint(end_k-start_k))))
+            info = 'diff     delta     <f2>'
+            save_data('RG_iterates', data, timestr, info=info)
         if (k_ < NumberOfIterations):
             print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
         end = time.time()
         print("Computation done in {} seconds".format(int(xp.rint(end-start))))
-        info = 'diff     delta     <f2>'
-        timestr = time.strftime("%Y%m%d_%H%M")
-        save_data('RG_iterates', data, timestr, info=info)
         plt.show()
     else:
         print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
@@ -338,7 +338,7 @@ def iterate_circle():
             circle_sup.append(h_sup_)
         pool = multiprocessing.Pool(num_cores)
         approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, dist=DistSurf, strict=True)
-        pool.imap(approach_circle, range(Nh+1))
+        pool.imap(approach_circle, iterable=range(Nh+1))
         Coord = xp.zeros((Nh+1, 2, NumberOfIterations))
         for i_ in trange(NumberOfIterations):
             for k_ in range(Nh+1):
