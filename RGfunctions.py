@@ -396,33 +396,31 @@ def critical_surface():
         plt.show()
 
 
-def converge_point(epsilon1, epsilon2):
+def converge_point(val1, val2, display):
     k_amp_ = KampSup.copy()
-    k_amp_[Kindx[0]] = KampInf[Kindx[0]] + epsilon1 * (KampSup[Kindx[0]] - KampInf[Kindx[0]])
-    k_amp_[Kindx[1]] = KampInf[Kindx[1]] + epsilon2 * (KampSup[Kindx[1]] - KampInf[Kindx[1]])
+    k_amp_[Kindx[0]] = val1
+    k_amp_[Kindx[1]] = val2
     h_ = generate_1Hamiltonian(K, k_amp_, Omega, symmetric=True)
-    return [converge(h_), h_.count, h_.error]
+    return [int(converge(h_)), h_.count, h_.error]
 
 def converge_region():
     if len(Kindx) != 2:
         print('Warning: 2 modes are required for converge_region')
     else:
         timestr = time.strftime("%Y%m%d_%H%M")
-        epsilon_ = xp.linspace(0.0, 1.0, Ncs)
+        x_vec = xp.linspace(KampInf[Kindx[0]], KampSup[Kindx[0]], Ncs)
+        y_vec = xp.linspace(KampInf[Kindx[1]], KampSup[Kindx[1]], Ncs)
         pool = multiprocessing.Pool(num_cores)
         data = []
-        for i_ in trange(Ncs):
-            epsilon2_ = epsilon_[i_]
-            converge_point_ = partial(converge_point, epsilon2=epsilon2_)
-            for result in tqdm(pool.imap(converge_point_, iterable=epsilon_), total=len(epsilon_), leave=False):
+        for y_ in tqdm(y_vec):
+            converge_point_ = partial(converge_point, val2=y_, display=False)
+            for result in tqdm(pool.imap(converge_point_, iterable=x_vec), total=Ncs, leave=False):
                 data.append(result)
             save_data('RG_converge_region', data, timestr)
         fig = plt.figure()
         ax = fig.gca()
         ax.set_box_aspect(1)
-        x_vec = xp.linspace(KampInf[Kindx[0]], KampSup[Kindx[0]], Ncs)
-        y_vec = xp.linspace(KampInf[Kindx[1]], KampSup[Kindx[1]], Ncs)
-        im = ax.pcolor(x_vec, y_vec, xp.array(data)[:, 0].reshape((Ncs, Ncs)), cmap='Reds_r')
+        im = ax.pcolor(x_vec, y_vec, xp.array(data)[:, 0].reshape((Ncs, Ncs)).astype(int), cmap='Reds_r')
         ax.set_xlim(KampInf[Kindx[0]], KampSup[Kindx[0]])
         ax.set_ylim(KampInf[Kindx[1]], KampSup[Kindx[1]])
         fig.colorbar(im)
