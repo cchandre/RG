@@ -1,9 +1,10 @@
-from Parameters import J, L, Sigma, Kappa, Case
+from Parameters import J, L, Sigma, Kappa, ChoiceIm, Case
 from Parameters import TolLie, TolMin, TolMax, DistSurf, Precision, MaxIter, MaxLie, NormChoice
 from Parameters import Radius, ModesPerturb, Nh, DistCircle
 from Parameters import Kindx, KampInf, KampSup, Ncs, TolCS, SaveData, PlotResults
 from Parameters import N, Omega0, Eigenvalues, Omega, FixedOmega, K, NumberOfIterations
 import numpy as xp
+from numpy import linalg as LA
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib import cm
@@ -28,8 +29,10 @@ else:
     precision_ = xp.float64
 
 N = xp.asarray(N, dtype=int)
+dim = len(N[:, 0])
 omega_0 = xp.asarray(Omega0, dtype=precision_)
-dim = len(omega_0)
+
+eigenval, w_eig = LA.eig(N.transpose())
 
 zero_ = dim * (0,)
 one_ = dim * (1,)
@@ -42,12 +45,24 @@ conv_dim = xp.index_exp[:J+1] + dim * xp.index_exp[L:3*L+1]
 
 indx = dim * (xp.hstack((xp.arange(0, L+1), xp.arange(-L, 0))),)
 nu = xp.meshgrid(*indx, indexing='ij')
-N_nu = xp.sign(Eigenvalues[0]).astype(int) * xp.einsum('ij,j...->i...', N, nu)
+N_nu = xp.sign(eigenval[xp.abs(eigenval) < 1]).astype(int) * xp.einsum('ij,j...->i...', N, nu)
 omega_0_nu = xp.einsum('i,i...->...', omega_0, nu).reshape(reshape_J)
 mask = xp.prod(abs(N_nu) <= L, axis=0, dtype=bool)
-norm_nu = xp.sqrt(xp.sum(xp.array(nu)**2, axis=0)).reshape(reshape_J)
+norm_nu = LA.norm(nu, axis=0).reshape(reshape_J)
 J_ = xp.arange(J+1, dtype=precision_).reshape(reshape_L)
-comp_im = Sigma * xp.repeat(norm_nu, J+1, axis=0) + Kappa * J_
+
+if ChoiceIm == 'AKP1998':
+    comp_im = Sigma * xp.repeat(norm_nu, J+1, axis=0) + Kappa * J_
+elif ChoiceIm =='K1999':
+    comp_im = xp.maximum(Sigma * xp.repeat(norm_nu, J+1, axis=0), Kappa * J_)
+else:
+    w_nu = xp.einsum('ij,j...->i...', w_eig, nu)
+    norm_w_nu = LA.norm(w_nu, axis=0).reshape(reshape_J)
+    comp_im = Sigma * xp.repeat(norm_w_nu, J+1, axis=0) + Kappa * J_
+    inv_eig = xp.sort(1.0 / xp.abs(eigenval))[::-1]
+    if inv_eig[1] + Sigma * (inv_eig[0] - inv_eig[1]) >= 1:
+        print('Sigma is too large')
+
 omega_0_nu_ = xp.repeat(xp.abs(omega_0_nu), J+1, axis=0) / xp.sqrt((omega_0 ** 2).sum())
 iminus = omega_0_nu_ > comp_im
 nu_mask = xp.index_exp[:J+1]
@@ -102,7 +117,7 @@ def converge(h, display=False):
         h_ = renormalization_group(h_)
         it_conv += 1
         if display:
-            print("norm = {:4e}".format(norm_int(h_.f)))
+            print("|H_{}| = {:4e}".format(it_conv, norm_int(h_.f)))
     if (norm_int(h_.f) <= TolMin) and (not h_.error):
         return True
     elif (norm_int(h_.f) >= TolMax) and (not h_.error):
@@ -401,7 +416,7 @@ def converge_point(val1, val2, display):
     k_amp_[Kindx[0]] = val1
     k_amp_[Kindx[1]] = val2
     h_ = generate_1Hamiltonian(K, k_amp_, Omega, symmetric=True)
-    return [int(converge(h_)), h_.count, h_.error]
+    return [int(converge(h_, display)), h_.count, h_.error]
 
 def converge_region():
     if len(Kindx) != 2:

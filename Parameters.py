@@ -1,14 +1,18 @@
 J = 5
 L = 5
 
-Sigma = 0.4
-Kappa = 0.1
+Sigma = 0.26
+Kappa = 0.3
 
-TolLie = 1e-16
-TolMin = 1e-15
-TolMax = 1e+10
-MaxLie = 50000
-MaxIter = 50000
+#ChoiceIm = 'AKP1998' # [J J Abad, H Koch, P Wittwer, Nonlinearity 11, 1185 (1998)]
+#ChoiceIm = 'K1999'   # [H Koch, ETDS 19, 475 (1999)]
+ChoiceIm = 'AK2000'  # [J J Abad, H Koch, CMP 212, 371 (2000)]
+
+TolLie = 1e-11
+TolMin = 1e-8
+TolMax = 1e+11
+MaxLie = 5000
+MaxIter = 5000
 DistSurf = 1e-9
 
 ## Parameters used in iterate_circle
@@ -18,13 +22,13 @@ ModesPerturb = 3 #number of modes in the perturbation
 Nh = 10 #points on the circle
 
 ## Parameters used in critical_surface and converge_region
-Ncs = 30 # number of points on the critical surface or converge region
+Ncs = 100 # number of points on the critical surface or converge region
 Kindx = (0, 1) # indices of K for which the critical surface / converge region is computed
-TolCS = 1e-6
+TolCS = 1e-7
 
 NumberOfIterations = 10
 
-SaveData = True
+SaveData = False
 PlotResults = False
 
 #NormChoice = 'max'
@@ -32,10 +36,10 @@ NormChoice = 'sum'
 #NormChoice = 'Euclidian'
 #NormChoice = 1.0
 
-Precision = 64 #@param ["32", "64", "128"] {type:"raw"}
+Precision = 64
 
-Case = 'GoldenMean'
-#Case = 'SpiralMean'
+#Case = 'GoldenMean'
+Case = 'SpiralMean'
 #Case = 'OMean'
 #Case = 'TauMean'
 #Case = 'EtaMean'
