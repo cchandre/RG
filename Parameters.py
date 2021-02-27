@@ -1,19 +1,24 @@
-J = 5
-L = 5
+J = 10
+L = 10
 
-Sigma = 0.26
-Kappa = 0.3
+Sigma = 0.4
+Kappa = 0.1
 
 #ChoiceIm = 'AKP1998' # [J J Abad, H Koch, P Wittwer, Nonlinearity 11, 1185 (1998)]
 #ChoiceIm = 'K1999'   # [H Koch, ETDS 19, 475 (1999)]
 ChoiceIm = 'AK2000'  # [J J Abad, H Koch, CMP 212, 371 (2000)]
 
-TolLie = 1e-11
-TolMin = 1e-8
-TolMax = 1e+11
-MaxLie = 5000
-MaxIter = 5000
-DistSurf = 1e-9
+#CanonicalTransformation = 'Lie'
+CanonicalTransformation = 'Type2'
+#CanonicalTransformation = 'Type3'
+MaxA = 0.2
+
+TolLie = 1e-10
+TolMin = 1e-9
+TolMax = 1e+6
+MaxLie = 500
+MaxIter = 500
+DistSurf = 1e-8
 
 ## Parameters used in iterate_circle
 DistCircle = 1e-5 # distance of the circle from the surface
@@ -26,7 +31,7 @@ Ncs = 100 # number of points on the critical surface or converge region
 Kindx = (0, 1) # indices of K for which the critical surface / converge region is computed
 TolCS = 1e-7
 
-NumberOfIterations = 10
+NumberOfIterations = 20
 
 SaveData = False
 PlotResults = False
@@ -38,8 +43,8 @@ NormChoice = 'sum'
 
 Precision = 64
 
-#Case = 'GoldenMean'
-Case = 'SpiralMean'
+Case = 'GoldenMean'
+#Case = 'SpiralMean'
 #Case = 'OMean'
 #Case = 'TauMean'
 #Case = 'EtaMean'

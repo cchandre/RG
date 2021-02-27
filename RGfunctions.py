@@ -1,5 +1,5 @@
 from Parameters import J, L, Sigma, Kappa, ChoiceIm, Case
-from Parameters import TolLie, TolMin, TolMax, DistSurf, Precision, MaxIter, MaxLie, NormChoice
+from Parameters import TolLie, TolMin, TolMax, DistSurf, Precision, MaxIter, MaxLie, NormChoice, CanonicalTransformation, MaxA
 from Parameters import Radius, ModesPerturb, Nh, DistCircle
 from Parameters import Kindx, KampInf, KampSup, Ncs, TolCS, SaveData, PlotResults
 from Parameters import N, Omega0, Eigenvalues, Omega, FixedOmega, K, NumberOfIterations
@@ -41,6 +41,7 @@ nL_ = dim * (-L,)
 axis_dim = tuple(range(1, dim+1))
 reshape_J = (1,) + dim * (2*L+1,)
 reshape_L = (J+1,) + dim * (1,)
+
 conv_dim = xp.index_exp[:J+1] + dim * xp.index_exp[L:3*L+1]
 
 indx = dim * (xp.hstack((xp.arange(0, L+1), xp.arange(-L, 0))),)
@@ -70,6 +71,28 @@ N_nu_mask = xp.index_exp[:J+1]
 for it in range(dim):
     nu_mask += (nu[it][mask],)
     N_nu_mask += (N_nu[it][mask],)
+
+if CanonicalTransformation in ['Type2', 'Type3']:
+    reshape_Le = (J+1,) + dim * (1,) + (1,) + dim * (1,)
+    reshape_Je = (1,) + dim * (2*L+1,) + (1,) + dim * (1,)
+    reshape_oa = (J+1,) + dim * (1,) + (J+1,) + dim * (1,)
+    reshape_cs = (1,) + dim * (2*L+1,) + (1,) + dim * (2*L+1,)
+    reshape_t = (J+1,) + dim * (2*L+1,) + (1,) + dim * (1,)
+    reshape_av = (1,) + dim * (1,) + (J+1,) + dim * (1,)
+    sum_dim = tuple(range(dim+1))
+    Je_ = xp.arange(J+1, dtype=precision_).reshape(reshape_Le)
+    omega_0_nu_e = omega_0_nu.reshape(reshape_Je)
+    oa_vec = 2.0 * MaxA * xp.random.rand(J+1) - MaxA
+    oa_mat = xp.vander(oa_vec, increasing=True).transpose()
+    indx = dim * (xp.hstack((xp.arange(0, L+1), xp.arange(-L, 0))),) + dim * (xp.arange(0, 2*L+1),)
+    nu_nu = xp.meshgrid(*indx, indexing='ij')
+    nu_phi = (2.0 * xp.pi * sum(nu_nu[k] * nu_nu[k+dim] for k in range(dim)) / precision_(2*L+1)).reshape(reshape_cs)
+    exp_nu = xp.exp(1j * nu_phi)
+    r3_av = (1,) + (J+1,) + dim * (1,)
+    r3_oy = (1,) + (J+1,) + dim * (2*L+1,)
+    r3_j = (J+1,) + (1,) + dim * (1,)
+    r3_h = (J+1,) + (1,) + dim * (2*L+1,)
+
 
 def plotf(fun):
     plt.rcParams.update({'font.size': 22})
@@ -210,26 +233,45 @@ def renormalization_group(h):
         for m in range(1, J+1):
             y_[m][iminus[m]] = (f_[m][iminus[m]] - 2.0 * f_[2][zero_] * omega_nu[0][iminus[m]] * y_[m-1][iminus[m]])\
                                 / omega_0_nu[0][iminus[m]]
-        y_t = xp.roll(y_ * J_, -1, axis=0)
-        f_t = xp.roll(f_ * J_, -1, axis=0)
-        y_o = omega_nu * y_
-        f_o = omega_nu * f_
-        sh_ = ao2 * f_t - omega_0_nu * y_ + conv_product(y_t, f_o) - conv_product(y_o, f_t)
-        k_ = 2
-        while (TolMax > norm(sh_) > TolLie) and (TolMax > norm(f_) > TolMin) and (k_ < MaxLie):
-            f_ += sh_
-            sh_t = xp.roll(sh_ * J_, -1, axis=0)
-            sh_o = omega_nu * sh_
-            sh_ = (ao2 * sh_t + conv_product(y_t, sh_o) - conv_product(y_o, sh_t)) / precision_(k_)
-            k_ += 1
+        if CanonicalTransformation == 'Lie':
+            y_t = xp.roll(y_ * J_, -1, axis=0)
+            f_t = xp.roll(f_ * J_, -1, axis=0)
+            y_o = omega_nu * y_
+            f_o = omega_nu * f_
+            sh_ = ao2 * f_t - omega_0_nu * y_ + conv_product(y_t, f_o) - conv_product(y_o, f_t)
+            k_ = 2
+            while (TolMax > norm(sh_) > TolLie) and (TolMax > norm(f_) > TolMin) and (k_ < MaxLie):
+                f_ += sh_
+                sh_t = xp.roll(sh_ * J_, -1, axis=0)
+                sh_o = omega_nu * sh_
+                sh_ = (ao2 * sh_t + conv_product(y_t, sh_o) - conv_product(y_o, sh_t)) / precision_(k_)
+                k_ += 1
+            if not (norm(sh_) <= TolLie):
+                if (norm(sh_) >= TolMax):
+                    h_.error = 'Lie transform diverging ({}-th)'.format(km_)
+                elif (k_ >= MaxLie):
+                    h_.error = 'Lie transform not converging ({}-th)'.format(km_)
+        elif CanonicalTransformation == 'Type2':
+            dy_doa = xp.einsum('ji,j...->i...', oa_mat, xp.fft.ifftn(xp.roll(1j * y_ * J_, -1, axis=0), axes=axis_dim) * (2*L+1)**dim)
+            ody_dphi = - xp.einsum('ji,j...->i...', oa_mat, xp.fft.ifftn(omega_nu.reshape(reshape_J) * y_, axes=axis_dim) * (2*L+1)**dim)
+            o0dy_dphi = - xp.einsum('ji,j...->i...', oa_mat, xp.fft.ifftn(omega_0_nu.reshape(reshape_J) * y_, axes=axis_dim) * (2*L+1)**dim)
+            exp_nu_mod = exp_nu * xp.exp(1j * omega_nu.reshape(reshape_Je) * dy_doa)
+            coeff_f = xp.moveaxis(oa_mat.reshape(reshape_oa) * exp_nu_mod, range(dim+1), range(-dim-1, 0))
+            oa_p = xp.power((oa_vec + ao2).reshape(r3_av) + ody_dphi.reshape(r3_oy), J_.reshape(r3_j))
+            h_val = xp.fft.ifftn(f_, axes=axis_dim) * (2*L+1)**dim
+            coeff_g = xp.einsum('j...,j...->...', oa_p, h_val.reshape(r3_h)) + o0dy_dphi
+            f_ = xp.real(LA.tensorsolve(coeff_f, coeff_g))
+        elif CanonicalTransformation == 'Type3':
+            omega_nu_e = omega_nu.reshape(reshape_Je)
+            f_e = f_.reshape(reshape_t)
+            y_t = xp.sum(xp.roll(y_ * J_, -1, axis=0).reshape(reshape_t) * oa_mat.reshape(reshape_oa) * exp_nu, axis=sum_dim)
+            y_e = y_.reshape(reshape_t) * oa_mat.reshape(reshape_oa) * exp_nu
+            coeff_f = xp.moveaxis(xp.power(oa_vec.reshape(reshape_av) - ao2 + xp.sum(omega_nu_e * y_e, axis=sum_dim), Je_) * exp_nu, range(dim+1), range(-dim-1, 0))
+            coeff_g = xp.sum(f_e * oa_mat.reshape(reshape_oa) * exp_nu * xp.exp(omega_nu_e * y_t) - omega_0_nu_e * y_e, axis=sum_dim)
+            f_ = xp.real(LA.tensorsolve(coeff_f, coeff_g))
         iminus_f[iminus] = f_[iminus]
         km_ += 1
         f_ = sym(f_)
-        if not (norm(sh_) <= TolLie):
-            if (norm(sh_) >= TolMax):
-                h_.error = 'Lie transform diverging ({}-th)'.format(km_)
-            elif (k_ >= MaxLie):
-                h_.error = 'Lie transform not converging ({}-th)'.format(km_)
     if (not (norm(iminus_f) <= TolMin)) and (not h_.error):
         if (norm(iminus_f) >= TolMax):
             h_.error = 'I- iterations diverging'
