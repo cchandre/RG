@@ -30,6 +30,8 @@ def definevar(root, types, values):
 			tempvar = tk.IntVar(root, value=value)
 		elif type == 'Char':
 			tempvar = tk.StringVar(root, value=value)
+		elif type == 'Bool':
+			tempvar = tk.BooleanVar(root, value=value)
 		paramlist.append(tempvar)
 	return paramlist
 
@@ -46,7 +48,7 @@ def makeform(root, fields, names, positions):
 def makemenus(root, fields, names, menus, positions):
 	entries = []
 	for (field, name, menu, position) in zip(fields, names, menus, positions):
-		lab = tk.Label(root, width=20, text=name, anchor='e')
+		lab = tk.Label(root, width=18, text=name, anchor='e')
 		men = ttk.Combobox(root, textvariable=field)
 		men['values'] = menu
 		men.state(["readonly"])
@@ -55,7 +57,7 @@ def makemenus(root, fields, names, menus, positions):
 		entries.append((field, men))
 	return entries
 
-def checks(root, fields, names, positions):
+def makechecks(root, fields, names, positions):
 	entries = []
 	for (field, name, position) in zip(fields, names, positions):
 		chec = tk.Checkbutton(root, text=name, variable=field, onvalue=True, offvalue=False)
@@ -85,8 +87,8 @@ mp_positions = (1, 0), (2, 0), (4,0), (5, 0)
 
 mpc_names = 'SaveData', 'PlotResults'
 mpc_types = 'Bool', 'Bool'
-mpc_values = False, False
-mpc_positions = (7, 0), (8, 0)
+mpc_values = True, False
+mpc_positions = (8, 0), (8, 1)
 
 tol_names = 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'DistSurf'
 tol_types = 'Double', 'Double', 'Double', 'Int', 'Int', 'Double'
@@ -104,9 +106,28 @@ adv2_types = 'Double', 'Double', 'Double', 'Int', 'Int', 'Int', 'Int', 'Double'
 adv2_values = 0.2, 1e-5, 1e-5, 3, 10, 100, (0, 1), 1e-7
 adv2_positions = (7, 0), (1, 3), (2, 3), (3, 3), (4, 3), (7, 3), (8, 3), (9, 3)
 
+run_etiqs = 'Iterates', 'Circle', 'Critical Surface', 'Converge Region'
+run_vals = 1, 2, 3, 4
+run_positions = (1, 3), (3, 3), (5, 3), (7, 3)
+var_run = tk.IntVar()
+var_run.set(run_vals[0])
+for (run_etiq, run_val, run_position) in zip(run_etiqs, run_vals, run_positions):
+	b_method = tk.Radiobutton(tab_run, variable=var_run, text=run_etiq, value=run_val, width=15, anchor='w')
+	b_method.grid(row=run_position[0], column=run_position[1], sticky='w')
+
+case_name = 'Case'
+case_type = 'Char'
+case_value = 'GoldenMean'
+case_menu = 'GoldenMean', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean', 'to be defined'
+case_position = (1, 0)
+
 mp_params = definevar(tab_param, mp_types, mp_values)
 mp_par = makeform(tab_param, mp_params, mp_names, mp_positions)
 rg_app.bind('<Return>', (lambda event, e=mp_par: fetch(e)))
+
+mpc_params = definevar(tab_param, mpc_types, mpc_values)
+mpc_par = makechecks(tab_param, mpc_params, mpc_names, mpc_positions)
+rg_app.bind('<Return>', (lambda event, e=mpc_par: fetch(e)))
 
 tol_params = definevar(tab_param, tol_types, tol_values)
 tol_par = makeform(tab_param, tol_params, tol_names, tol_positions)
@@ -116,6 +137,13 @@ adv_params = definevar(tab_advanced, adv_types, adv_values)
 adv_par = makemenus(tab_advanced, adv_params, adv_names, adv_menus, adv_positions)
 rg_app.bind('<Return>', (lambda event, e=adv_par: fetch(e)))
 
+adv2_params = definevar(tab_advanced, adv2_types, adv2_values)
+adv2_par = makeform(tab_advanced, adv2_params, adv2_names, adv2_positions)
+rg_app.bind('<Return>', (lambda event, e=adv2_par: fetch(e)))
+
+case_param = definevar(tab_run, case_type, case_value)
+case_par = makemenus(tab_run, case_param, case_name, case_menu, case_position)
+rg_app.bind('<Return>', (lambda event, e=case_par: fetch(e)))
 
 tk.Button(tab_run, text='Run', command=rg_app.quit).grid(row=11, column=4)
 tk.Button(tab_run, text='Quit', command=rg_app.quit).grid(row=11, column=5)
