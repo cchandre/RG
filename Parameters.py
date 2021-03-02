@@ -1,5 +1,5 @@
-J = 10
-L = 10
+J = 5
+L = 5
 
 Sigma = 0.4
 Kappa = 0.1
@@ -8,16 +8,16 @@ Kappa = 0.1
 #ChoiceIm = 'K1999'   # [H Koch, ETDS 19, 475 (1999)]
 ChoiceIm = 'AK2000'  # [J J Abad, H Koch, CMP 212, 371 (2000)]
 
-#CanonicalTransformation = 'Lie'
-CanonicalTransformation = 'Type2'
+CanonicalTransformation = 'Lie'
+#CanonicalTransformation = 'Type2'
 #CanonicalTransformation = 'Type3'
 MaxA = 0.2
 
-TolLie = 1e-10
-TolMin = 1e-9
+TolLie = 1e-12
+TolMin = 1e-10
 TolMax = 1e+6
-MaxLie = 500
-MaxIter = 500
+MaxLie = 50000
+MaxIter = 5000
 DistSurf = 1e-8
 
 ## Parameters used in iterate_circle
@@ -27,13 +27,13 @@ ModesPerturb = 3 #number of modes in the perturbation
 Nh = 10 #points on the circle
 
 ## Parameters used in critical_surface and converge_region
-Ncs = 100 # number of points on the critical surface or converge region
+Ncs = 200 # number of points on the critical surface or converge region
 Kindx = (0, 1) # indices of K for which the critical surface / converge region is computed
 TolCS = 1e-7
 
 NumberOfIterations = 20
 
-SaveData = False
+SaveData = True
 PlotResults = False
 
 #NormChoice = 'max'
@@ -61,7 +61,7 @@ if Case == 'GoldenMean':
     Omega = [1.0, 0.0]
 
     K = ((0, 1, 0), (0, 1, 1))
-    KampInf = [0.0, 0.0]
+    KampInf = [0.02, 0.02]
     KampSup = [0.04, 0.04]
 
 elif Case == 'SpiralMean':

@@ -19,14 +19,16 @@ from tqdm import tqdm, trange
 import warnings
 warnings.filterwarnings("ignore")
 
-# CODE error
-# k-th Lie transform diverging: [1, k]
-# k-th Lie transform not converging: [-1, k]
-# I- iterations diverging: [2, 0]
-# I- iterations not converging: [-2, 0]
-# below (approach): [3, 0]
-# above (generate_2Hamiltonians): [4, 0]
-# below (generate_2Hamiltonians): [-4, 0]
+'''
+ERROR CODES
+    k-th Lie transform diverging: [1, k]
+    k-th Lie transform not converging: [-1, k]
+    I- iterations diverging: [2, 0]
+    I- iterations not converging: [-2, 0]
+    below (approach): [3, 0]
+    above (generate_2Hamiltonians): [4, 0]
+    below (generate_2Hamiltonians): [-4, 0]
+'''
 
 num_cores = multiprocessing.cpu_count()
 
