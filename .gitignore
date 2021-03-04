@@ -1,0 +1,6 @@
+
+.DS_Store
+__pycache__/Parameters.cpython-38.pyc
+__pycache__/RG_classes_functions.cpython-38.pyc
+__pycache__/RGfunctions.cpython-38.pyc
+*.mat
