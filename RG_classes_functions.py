@@ -20,15 +20,17 @@ class Hamiltonian:
         self.error = error
         self.count = count
 
-class ModesInit:
-    def __init__(self, k, kinf, ksup, omega):
+class CaseInit:
+    def __init__(self, N, omega_0, Omega, k, kinf, ksup):
+        self.N = N
+        self.omega_0 = omega_0
+        self.Omega = Omega
         self.K = k
         self.KampInf = kinf
         self.KampSup = ksup
-        self.Omega = omega
 
-class RGcase:
-    def __init__(self, N, omega_0, params):
+class RG:
+    def __init__(self, case, params):
         if params['Precision'] == 32:
             self.Precision = xp.float32
         elif params['Precision'] == 128:
@@ -60,9 +62,9 @@ class RGcase:
         self.Nh = params['Nh']
         self.Ncs = params['Ncs']
         self.TolCS = params['TolCS']
-        self.N = xp.asarray(N, dtype=int)
-        self.dim = len(omega_0)
-        self.omega_0 = xp.asarray(omega_0, dtype=self.Precision)
+        self.N = xp.asarray(case.N, dtype=int)
+        self.dim = len(case.omega_0)
+        self.omega_0 = xp.asarray(case.omega_0, dtype=self.Precision)
         self.zero_ = self.dim * (0,)
         self.one_ = self.dim * (1,)
         self.L_ = self.dim * (self.L,)
@@ -292,16 +294,16 @@ class RGcase:
             for it in range(len(k_modes)):
                 f_[k_modes[it]] = 2.0 * xp.random.random() - 1.0
         else:
-            for it in range(len(k_modes)):
-                f_[k_modes[it]] = k_amp[it]
+            for (k_mode, kamp) in zip(k_modes, k_amp):
+                f_[k_mode] = kamp
         if symmetric:
             f_ = self.sym(f_)
         f_[2][self.zero_] = 0.5
         return Hamiltonian(omega, f_)
 
-    def generate_2Hamiltonians(self, modes_i):
-        h_inf = self.generate_1Hamiltonian(modes_i.K, modes_i.KampInf, modes_i.Omega, symmetric=True)
-        h_sup = self.generate_1Hamiltonian(modes_i.K, modes_i.KampSup, modes_i.Omega, symmetric=True)
+    def generate_2Hamiltonians(self, case_init):
+        h_inf = self.generate_1Hamiltonian(case_init.K, case_init.KampInf, case_init.Omega, symmetric=True)
+        h_sup = self.generate_1Hamiltonian(case_init.K, case_init.KampSup, case_init.Omega, symmetric=True)
         if not self.converge(h_inf):
             h_inf.error = [4, 0]
         if self.converge(h_sup):
@@ -310,8 +312,8 @@ class RGcase:
             h_sup.error = [0, 0]
         return h_inf, h_sup
 
-    def iterates(self, modes_i):
-        h_inf, h_sup = self.generate_2Hamiltonians(modes_i)
+    def iterates(self, case_init):
+        h_inf, h_sup = self.generate_2Hamiltonians(case_init)
         if (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
             timestr = time.strftime("%Y%m%d_%H%M")
             if self.PlotResults:
@@ -326,7 +328,7 @@ class RGcase:
                 h_inf_ = self.renormalization_group(h_inf)
                 h_sup_ = self.renormalization_group(h_sup)
                 if k_ == 1:
-                    print('Critical parameter = {}'.format(2.0 * h_inf.f[modes_i.K[0]]))
+                    print('Critical parameter = {}'.format(2.0 * h_inf.f[case_init.K[0]]))
                 if self.PlotResults:
                     self.plotf(h_inf_.f[0])
                 mean2_p = 2.0 * h_inf.f[2][self.zero_]
@@ -340,7 +342,7 @@ class RGcase:
                         (diff_p, delta_p, mean2_p, int(xp.rint(end_k-start_k))))
                 if self.SaveData:
                     info = 'diff     delta     <f2>'
-                    save_data('RG_iterates', data, self.params, modes_i, timestr, info=info)
+                    save_data('RG_iterates', data, timestr, self.params, case_init, info=info)
             if (k_ < self.NumberOfIterations):
                 print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
             end = time.time()
@@ -352,9 +354,9 @@ class RGcase:
     def approach_set(self, k, set1, set2, dist, strict):
         set1[k], set2[k] = self.approach(set1[k], set2[k], dist=dist, strict=strict)
 
-    def iterate_circle(self, modes_i):
+    def iterate_circle(self, case_init):
         start = time.time()
-        h_inf, h_sup = self.generate_2Hamiltonians(modes_i)
+        h_inf, h_sup = self.generate_2Hamiltonians(case_init)
         h_inf, h_sup = self.approach(h_inf, h_sup, dist=self.DistSurf, strict=True)
         h_inf = self.renormalization_group(h_inf)
         h_sup = self.renormalization_group(h_sup)
@@ -390,7 +392,7 @@ class RGcase:
                 for k_ in range(self.Nh+1):
                     Coord[k_, :, i_] = [xp.vdot(circle_inf[k_].f - hc_inf.f, v1), xp.vdot(circle_inf[k_].f - hc_inf.f, v2)]
                 if self.SaveData:
-                    save_data('RG_circle', Coord / self.Radius ** 2, timestr, self.params, modes_i)
+                    save_data('RG_circle', Coord / self.Radius ** 2, timestr, self.params, case_init)
                 if self.PlotResults:
                     fig = plt.figure()
                     ax = fig.add_subplot(111)
@@ -411,76 +413,78 @@ class RGcase:
         else:
             print('Warning (iterate_circle): ' + h_inf.error + ' / ' + h_sup.error)
 
-    def compute_cr(self, epsilon, modes_i):
-        k_inf_ = modes_i.KampInf.copy()
-        k_sup_ = modes_i.KampSup.copy()
-        k_inf_[0] = modes_i.KampInf[0] + epsilon * (modes_i.KampSup[0] - modes_i.KampInf[0])
+    def compute_cr(self, epsilon, case_init):
+        k_inf_ = case_init.KampInf.copy()
+        k_sup_ = case_init.KampSup.copy()
+        k_inf_[0] = case_init.KampInf[0] + epsilon * (case_init.KampSup[0] - case_init.KampInf[0])
         k_sup_[0] = k_inf_[0]
-        modes_ = ModesInit(modes_i.K, k_inf_, k_sup_, modes_i.Omega)
-        h_inf, h_sup = self.generate_2Hamiltonians(modes_)
+        case_ = copy.deepcopy(case_init)
+        case_.KampInf = k_inf_
+        case_.KampSup = k_sup_
+        h_inf, h_sup = self.generate_2Hamiltonians(case_)
         if self.converge(h_inf) and (not self.converge(h_sup)):
             h_inf, h_sup = self.approach(h_inf, h_sup, dist=self.TolCS)
-            return 2.0 * xp.array([h_inf.f[modes_i.K[0]], h_inf.f[modes_i.K[1]]])
+            return 2.0 * xp.array([h_inf.f[case_init.K[0]], h_inf.f[case_init.K[1]]])
         else:
-            return 2.0 * xp.array([h_inf.f[modes_i.K[0]], xp.nan])
+            return 2.0 * xp.array([h_inf.f[case_init.K[0]], xp.nan])
 
-    def critical_surface(self, modes_i):
+    def critical_surface(self, case_init):
         timestr = time.strftime("%Y%m%d_%H%M")
         epsilon_ = xp.linspace(0.0, 1.0, self.Ncs)
         pool = multiprocessing.Pool(self.NumCores)
         data = []
-        compfun = partial(self.compute_cr, modes_i=modes_i)
+        compfun = partial(self.compute_cr, case_init=case_init)
         for result in tqdm(pool.imap(compfun, iterable=epsilon_), total=len(epsilon_)):
             data.append(result)
         data = xp.array(data).transpose()
         if self.SaveData:
-            save_data('RG_critical_surface', data, timestr, self.params, modes_i)
+            save_data('RG_critical_surface', data, timestr, self.params, case_init)
         if self.PlotResults:
             fig = plt.figure()
             ax = fig.gca()
             ax.set_box_aspect(1)
             plt.plot(data[0, :], data[1, :], color='b', linewidth=2)
-            ax.set_xlim(modes_i.KampInf[0], modes_i.KampSup[0])
-            ax.set_ylim(modes_i.KampInf[1], modes_i.KampSup[1])
+            ax.set_xlim(case_init.KampInf[0], case_init.KampSup[0])
+            ax.set_ylim(case_init.KampInf[1], case_init.KampSup[1])
             plt.show()
 
-    def converge_point(self, val1, val2, modes_i):
-        k_amp_ = modes_i.KampSup.copy()
+    def converge_point(self, val1, val2, case_init):
+        k_amp_ = case_init.KampSup.copy()
         k_amp_[0] = val1
         k_amp_[1] = val2
-        h_ = self.generate_1Hamiltonian(modes_i.K, k_amp_, modes_i.Omega, symmetric=True)
+        h_ = self.generate_1Hamiltonian(case_init.K, k_amp_, case_init.Omega, symmetric=True)
         return [int(self.converge(h_)), h_.count], h_.error
 
-    def converge_region(self, modes_i):
+    def converge_region(self, case_init):
         timestr = time.strftime("%Y%m%d_%H%M")
-        x_vec = xp.linspace(modes_i.KampInf[0], modes_i.KampSup[0], self.Ncs)
-        y_vec = xp.linspace(modes_i.KampInf[1], modes_i.KampSup[1], self.Ncs)
+        x_vec = xp.linspace(case_init.KampInf[0], case_init.KampSup[0], self.Ncs)
+        y_vec = xp.linspace(case_init.KampInf[1], case_init.KampSup[1], self.Ncs)
         pool = multiprocessing.Pool(self.NumCores)
         data = []
         info = []
         for y_ in tqdm(y_vec):
-            converge_point_ = partial(self.converge_point, val2=y_, modes_i=modes_i)
+            converge_point_ = partial(self.converge_point, val2=y_, case_init=case_init)
             for result_data, result_info in tqdm(pool.imap(converge_point_, iterable=x_vec), total=self.Ncs, leave=False):
                 data.append(result_data)
                 info.append(result_info)
             if self.SaveData:
-                save_data('RG_converge_region', data, timestr, self.params, modes_i)
+                save_data('RG_converge_region', data, timestr, self.params, case_init)
         if self.SaveData:
-            save_data('RG_converge_region', xp.array(data).reshape((self.Ncs, self.Ncs, 2)), timestr, self.params, modes_i, info=xp.array(info).reshape((self.Ncs, self.Ncs, 2)))
+            save_data('RG_converge_region', xp.array(data).reshape((self.Ncs, self.Ncs, 2)), timestr, self.params, case_init, info=xp.array(info).reshape((self.Ncs, self.Ncs, 2)))
         if self.PlotResults:
             fig = plt.figure()
             ax = fig.gca()
             ax.set_box_aspect(1)
             im = ax.pcolor(x_vec, y_vec, xp.array(data)[:, 0].reshape((self.Ncs, self.Ncs)).astype(int), cmap='Reds_r')
-            ax.set_xlim(modes_i.KampInf[0], modes_i.KampSup[0])
-            ax.set_ylim(modes_i.KampInf[1], modes_i.KampSup[1])
+            ax.set_xlim(case_init.KampInf[0], case_init.KampSup[0])
+            ax.set_ylim(case_init.KampInf[1], case_init.KampSup[1])
             fig.colorbar(im)
             plt.show()
 
 
-def save_data(name, data, timestr, params, modes_i, info=[]):
+def save_data(name, data, timestr, params, case_init, info=[]):
     mdic = params.copy()
-    mdic.update({'modes_i': modes_i})
+    mdic.update({'case': case_init})
     mdic.update({'data': data})
     mdic.update({'info': info})
     today = date.today()
