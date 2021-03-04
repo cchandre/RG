@@ -1,8 +1,8 @@
-#from Parameters import J, L, Sigma, Kappa, ChoiceIm, Case
-#from Parameters import TolLie, TolMin, TolMax, DistSurf, Precision, MaxIter, MaxLie, NormChoice, CanonicalTransformation, MaxA
-#from Parameters import Radius, ModesPerturb, Nh, DistCircle
-#from Parameters import Kindx, KampInf, KampSup, Ncs, TolCS, SaveData, PlotResults
-#from Parameters import N, Omega0, Eigenvalues, Omega, FixedOmega, K, NumberOfIterations
+from Parameters import J, L, Sigma, Kappa, ChoiceIm, Case
+from Parameters import TolLie, TolMin, TolMax, DistSurf, Precision, MaxIter, MaxLie, NormChoice, CanonicalTransformation, MaxA
+from Parameters import Radius, ModesPerturb, Nh, DistCircle
+from Parameters import Kindx, KampInf, KampSup, Ncs, TolCS, SaveData, PlotResults
+from Parameters import N, Omega0, Eigenvalues, Omega, FixedOmega, K, NumberOfIterations
 import numpy as xp
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
