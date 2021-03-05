@@ -8,9 +8,6 @@ from scipy.io import savemat
 import copy
 import time
 from datetime import date
-import multiprocessing
-from functools import partial
-from tqdm import tqdm, trange
 import warnings
 
 class Hamiltonian:
@@ -38,7 +35,6 @@ class RG:
         else:
             self.Precision = xp.float64
         self.params = params
-        self.NumCores = multiprocessing.cpu_count()
         self.L = params['L']
         self.J = params['J']
         self.TolMin = params['TolMin']
@@ -288,14 +284,10 @@ class RG:
         h_.f = f_
         return h_
 
-    def generate_1Hamiltonian(self, k_modes, k_amp, omega, symmetric=False):
+    def generate_1Hamiltonian(self, k_modes, k_amps, omega, symmetric=False):
         f_ = xp.zeros((self.J+1,) + self.dim * (2*self.L+1,), dtype=self.Precision)
-        if k_amp == 'random':
-            for it in range(len(k_modes)):
-                f_[k_modes[it]] = 2.0 * xp.random.random() - 1.0
-        else:
-            for (k_mode, kamp) in zip(k_modes, k_amp):
-                f_[k_mode] = kamp
+        for (k_mode, k_amp) in zip(k_modes, k_amps):
+            f_[k_mode] = k_amp
         if symmetric:
             f_ = self.sym(f_)
         f_[2][self.zero_] = 0.5
@@ -311,184 +303,3 @@ class RG:
         else:
             h_sup.error = [0, 0]
         return h_inf, h_sup
-
-    def iterates(self, case_init):
-        h_inf, h_sup = self.generate_2Hamiltonians(case_init)
-        if (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
-            timestr = time.strftime("%Y%m%d_%H%M")
-            if self.PlotResults:
-                self.plotf(h_sup.f[0])
-            start = time.time()
-            data = []
-            k_ = 0
-            while (k_ < self.NumberOfIterations) and (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
-                k_ += 1
-                start_k = time.time()
-                h_inf, h_sup = self.approach(h_inf, h_sup, dist=self.DistSurf, strict=True)
-                h_inf_ = self.renormalization_group(h_inf)
-                h_sup_ = self.renormalization_group(h_sup)
-                if k_ == 1:
-                    print('Critical parameter = {}'.format(2.0 * h_inf.f[case_init.K[0]]))
-                if self.PlotResults:
-                    self.plotf(h_inf_.f[0])
-                mean2_p = 2.0 * h_inf.f[2][self.zero_]
-                diff_p = self.norm(xp.abs(h_inf.f) - xp.abs(h_inf_.f))
-                delta_p = self.norm(xp.abs(h_inf_.f) - xp.abs(h_sup_.f)) / self.norm(h_inf.f - h_sup.f)
-                data.append([diff_p, delta_p, mean2_p])
-                h_inf = copy.deepcopy(h_inf_)
-                h_sup = copy.deepcopy(h_sup_)
-                end_k = time.time()
-                print("diff = %.3e    delta = %.7f   <f2> = %.7f    (done in %d seconds)" % \
-                        (diff_p, delta_p, mean2_p, int(xp.rint(end_k-start_k))))
-                if self.SaveData:
-                    info = 'diff     delta     <f2>'
-                    save_data('RG_iterates', data, timestr, self.params, case_init, info=info)
-            if (k_ < self.NumberOfIterations):
-                print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
-            end = time.time()
-            print("Computation done in {} seconds".format(int(xp.rint(end-start))))
-            plt.show()
-        else:
-            print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
-
-    def approach_set(self, k, set1, set2, dist, strict):
-        set1[k], set2[k] = self.approach(set1[k], set2[k], dist=dist, strict=strict)
-
-    def iterate_circle(self, case_init):
-        start = time.time()
-        h_inf, h_sup = self.generate_2Hamiltonians(case_init)
-        h_inf, h_sup = self.approach(h_inf, h_sup, dist=self.DistSurf, strict=True)
-        h_inf = self.renormalization_group(h_inf)
-        h_sup = self.renormalization_group(h_sup)
-        h_inf, h_sup = self.approach(h_inf, h_sup, dist=self.DistCircle, strict=True)
-        if (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
-            print('starting circle')
-            timestr = time.strftime("%Y%m%d_%H%M")
-            hc_inf, hc_sup = self.approach(h_inf, h_sup, dist=self.DistSurf, strict=True)
-            v1 = xp.zeros((self.J+1,) + self.dim * (2*self.L+1,), dtype=self.Precision)
-            v2 = xp.zeros((self.J+1,) + self.dim * (2*self.L+1,), dtype=self.Precision)
-            v1[0][self.dim * xp.index_exp[:self.ModesPerturb]] = 2.0 * xp.random.random(self.dim * (self.ModesPerturb,)) - 1.0
-            v2[0][self.dim * xp.index_exp[:self.ModesPerturb]] = 2.0 * xp.random.random(self.dim * (self.ModesPerturb,)) - 1.0
-            v1 = self.sym(v1)
-            v2 = self.sym(v2)
-            v2 = v2 - xp.vdot(v2, v1) * v1 / xp.vdot(v1, v1)
-            v1 = self.Radius * v1 / xp.sqrt(xp.vdot(v1, v1))
-            v2 = self.Radius * v2 / xp.sqrt(xp.vdot(v2, v2))
-            circle_inf = []
-            circle_sup = []
-            for k_ in range(self.Nh+1):
-                h_inf_ = copy.deepcopy(h_inf)
-                h_sup_ = copy.deepcopy(h_sup)
-                theta = self.Precision(k_) * 2.0 * xp.pi / self.Precision(self.Nh)
-                h_inf_.f = h_inf.f + v1 * xp.cos(theta) + v2 * xp.sin(theta)
-                h_sup_.f = h_sup.f + v1 * xp.cos(theta) + v2 * xp.sin(theta)
-                circle_inf.append(h_inf_)
-                circle_sup.append(h_sup_)
-            pool = multiprocessing.Pool(self.NumCores)
-            approach_circle = partial(self.approach_set, set1=circle_inf, set2=circle_sup, dist=self.DistSurf, strict=True)
-            pool.imap(approach_circle, iterable=range(self.Nh+1))
-            Coord = xp.zeros((self.Nh+1, 2, self.NumberOfIterations))
-            for i_ in trange(self.NumberOfIterations):
-                for k_ in range(self.Nh+1):
-                    Coord[k_, :, i_] = [xp.vdot(circle_inf[k_].f - hc_inf.f, v1), xp.vdot(circle_inf[k_].f - hc_inf.f, v2)]
-                if self.SaveData:
-                    save_data('RG_circle', Coord / self.Radius ** 2, timestr, self.params, case_init)
-                if self.PlotResults:
-                    fig = plt.figure()
-                    ax = fig.add_subplot(111)
-                    ax.plot(Coord[:, 0, i_] / self.Radius ** 2, Coord[:, 1, i_] / self.Radius ** 2, label='%d -th iterate' % i_)
-                    ax.legend()
-                    plt.pause(1e-17)
-                renfunc = partial(self.renormalization_group)
-                circle_inf = pool.imap(renfunc, iterable=circle_inf)
-                circle_sup = pool.imap(renfunc, iterable=circle_sup)
-                approach_circle = partial(self.approach_set, set1=circle_inf, set2=circle_sup, dist=self.DistSurf, strict=True)
-                pool.imap(approach_circle, iterable=range(self.Nh+1))
-                hc_inf = self.renormalization_group(hc_inf)
-                hc_sup = self.renormalization_group(hc_sup)
-                hc_inf, hc_sup = self.approach(hc_inf, hc_sup, dist=self.DistSurf, strict=True)
-            end = time.time()
-            print("Computation done in {} seconds".format(int(xp.rint(end-start))))
-            plt.show()
-        else:
-            print('Warning (iterate_circle): ' + h_inf.error + ' / ' + h_sup.error)
-
-    def compute_cr(self, epsilon, case_init):
-        k_inf_ = case_init.KampInf.copy()
-        k_sup_ = case_init.KampSup.copy()
-        k_inf_[0] = case_init.KampInf[0] + epsilon * (case_init.KampSup[0] - case_init.KampInf[0])
-        k_sup_[0] = k_inf_[0]
-        case_ = copy.deepcopy(case_init)
-        case_.KampInf = k_inf_
-        case_.KampSup = k_sup_
-        h_inf, h_sup = self.generate_2Hamiltonians(case_)
-        if self.converge(h_inf) and (not self.converge(h_sup)):
-            h_inf, h_sup = self.approach(h_inf, h_sup, dist=self.TolCS)
-            return 2.0 * xp.array([h_inf.f[case_init.K[0]], h_inf.f[case_init.K[1]]])
-        else:
-            return 2.0 * xp.array([h_inf.f[case_init.K[0]], xp.nan])
-
-    def critical_surface(self, case_init):
-        timestr = time.strftime("%Y%m%d_%H%M")
-        epsilon_ = xp.linspace(0.0, 1.0, self.Ncs)
-        pool = multiprocessing.Pool(self.NumCores)
-        data = []
-        compfun = partial(self.compute_cr, case_init=case_init)
-        for result in tqdm(pool.imap(compfun, iterable=epsilon_), total=len(epsilon_)):
-            data.append(result)
-        data = xp.array(data).transpose()
-        if self.SaveData:
-            save_data('RG_critical_surface', data, timestr, self.params, case_init)
-        if self.PlotResults:
-            fig = plt.figure()
-            ax = fig.gca()
-            ax.set_box_aspect(1)
-            plt.plot(data[0, :], data[1, :], color='b', linewidth=2)
-            ax.set_xlim(case_init.KampInf[0], case_init.KampSup[0])
-            ax.set_ylim(case_init.KampInf[1], case_init.KampSup[1])
-            plt.show()
-
-    def converge_point(self, val1, val2, case_init):
-        k_amp_ = case_init.KampSup.copy()
-        k_amp_[0] = val1
-        k_amp_[1] = val2
-        h_ = self.generate_1Hamiltonian(case_init.K, k_amp_, case_init.Omega, symmetric=True)
-        return [int(self.converge(h_)), h_.count], h_.error
-
-    def converge_region(self, case_init):
-        timestr = time.strftime("%Y%m%d_%H%M")
-        x_vec = xp.linspace(case_init.KampInf[0], case_init.KampSup[0], self.Ncs)
-        y_vec = xp.linspace(case_init.KampInf[1], case_init.KampSup[1], self.Ncs)
-        pool = multiprocessing.Pool(self.NumCores)
-        data = []
-        info = []
-        for y_ in tqdm(y_vec):
-            converge_point_ = partial(self.converge_point, val2=y_, case_init=case_init)
-            for result_data, result_info in tqdm(pool.imap(converge_point_, iterable=x_vec), total=self.Ncs, leave=False):
-                data.append(result_data)
-                info.append(result_info)
-            if self.SaveData:
-                save_data('RG_converge_region', data, timestr, self.params, case_init)
-        if self.SaveData:
-            save_data('RG_converge_region', xp.array(data).reshape((self.Ncs, self.Ncs, 2)), timestr, self.params, case_init, info=xp.array(info).reshape((self.Ncs, self.Ncs, 2)))
-        if self.PlotResults:
-            fig = plt.figure()
-            ax = fig.gca()
-            ax.set_box_aspect(1)
-            im = ax.pcolor(x_vec, y_vec, xp.array(data)[:, 0].reshape((self.Ncs, self.Ncs)).astype(int), cmap='Reds_r')
-            ax.set_xlim(case_init.KampInf[0], case_init.KampSup[0])
-            ax.set_ylim(case_init.KampInf[1], case_init.KampSup[1])
-            fig.colorbar(im)
-            plt.show()
-
-
-def save_data(name, data, timestr, params, case_init, info=[]):
-    mdic = params.copy()
-    mdic.update({'case': case_init})
-    mdic.update({'data': data})
-    mdic.update({'info': info})
-    today = date.today()
-    date_today = today.strftime(" %B %d, %Y\n")
-    email = ' cristel.chandre@univ-amu.fr'
-    mdic.update({'date': date_today, 'author': email})
-    savemat(name + '_' + timestr + '.mat', mdic)

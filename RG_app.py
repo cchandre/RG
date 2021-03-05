@@ -1,15 +1,21 @@
+import numpy as xp
 import tkinter as tk
 from tkinter import ttk
 import time
 from itertools import chain
+import multiprocessing
 import RG_classes_functions as RG
-
+import matplotlib.pyplot as plt
+import copy
+from functools import partial
+from tqdm import tqdm, trange
 import warnings
 warnings.filterwarnings("ignore")
 
 color_bg = '#9BB7D4'
 font = 'Garamond 14 bold'
 font_color = '#000080'
+NumCores = multiprocessing.cpu_count()
 
 def main():
 	version_rgapp = '0.3'
@@ -198,7 +204,6 @@ def rg_run(run_method, case_var, mp_names, mp_par, mpc_names, mpc_par, adv_names
 	for (name, entry) in chain(zip(mp_names, mp_par), zip(mpc_names, mpc_par),\
 	 zip(adv_names, adv_par), zip(adv2_names, adv2_par), zip(tol_names, tol_par)):
 		params[name] = entry[0].get()
-	define_case(case_var.get(), val_params)
 	N = list(eval(val_params[0].get()))
 	omega_0 = list(eval(val_params[1].get()))
 	Omega = list(eval(val_params[2].get()))
@@ -208,13 +213,13 @@ def rg_run(run_method, case_var, mp_names, mp_par, mpc_names, mpc_par, adv_names
 	case_init = RG.CaseInit(N, omega_0, Omega, K, KampInf, KampSup)
 	case_study = RG.RG(case_init, params)
 	if run_method.get() == 'Iterates':
-		case_study.iterates(case_init)
+		iterates(case_study, case_init)
 	elif run_method.get() == 'Circle Iterates':
 		case_study.iterate_circle(case_init)
 	elif run_method.get() == 'Critical Surface':
-		case_study.critical_surface(case_init)
+		critical_surface(case_study, case_init)
 	elif run_method.get() == 'Converge Region':
-		case_study.converge_region(case_init)
+		converge_region(case_study, case_init)
 
 def define_case(case, val_params):
 	if case == 'GoldenMean':
@@ -271,6 +276,186 @@ def define_case(case, val_params):
 	val_params[3].set(str(K))
 	val_params[4].set(str(KampInf))
 	val_params[5].set(str(KampSup))
+
+def iterates(case, case_init):
+	h_inf, h_sup = case.generate_2Hamiltonians(case_init)
+	if (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
+		timestr = time.strftime("%Y%m%d_%H%M")
+		if case.PlotResults:
+			case.plotf(h_sup.f[0])
+		start = time.time()
+		data = []
+		k_ = 0
+		while (k_ < case.NumberOfIterations) and (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
+			k_ += 1
+			start_k = time.time()
+			h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.DistSurf, strict=True)
+			h_inf_ = case.renormalization_group(h_inf)
+			h_sup_ = case.renormalization_group(h_sup)
+			if k_ == 1:
+				print('Critical parameter = {}'.format(2.0 * h_inf.f[case_init.K[0]]))
+			if case.PlotResults:
+				case.plotf(h_inf_.f[0])
+			mean2_p = 2.0 * h_inf.f[2][case.zero_]
+			diff_p = case.norm(xp.abs(h_inf.f) - xp.abs(h_inf_.f))
+			delta_p = case.norm(xp.abs(h_inf_.f) - xp.abs(h_sup_.f)) / case.norm(h_inf.f - h_sup.f)
+			data.append([diff_p, delta_p, mean2_p])
+			h_inf = copy.deepcopy(h_inf_)
+			h_sup = copy.deepcopy(h_sup_)
+			end_k = time.time()
+			print("diff = %.3e    delta = %.7f   <f2> = %.7f    (done in %d seconds)" % \
+					(diff_p, delta_p, mean2_p, int(xp.rint(end_k-start_k))))
+			if case.SaveData:
+				info = 'diff     delta     <f2>'
+				save_data('RG_iterates', data, timestr, case.params, case_init, info=info)
+		if (k_ < case.NumberOfIterations):
+			print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
+		end = time.time()
+		print("Computation done in {} seconds".format(int(xp.rint(end-start))))
+		plt.show()
+	else:
+		print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
+
+def compute_cr(epsilon, case, case_init):
+	k_inf_ = case_init.KampInf.copy()
+	k_sup_ = case_init.KampSup.copy()
+	k_inf_[0] = case_init.KampInf[0] + epsilon * (case_init.KampSup[0] - case_init.KampInf[0])
+	k_sup_[0] = k_inf_[0]
+	case_ = copy.deepcopy(case_init)
+	case_.KampInf = k_inf_
+	case_.KampSup = k_sup_
+	h_inf, h_sup = case.generate_2Hamiltonians(case_)
+	if case.converge(h_inf) and (not case.converge(h_sup)):
+		h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.TolCS)
+		return 2.0 * xp.array([h_inf.f[case_init.K[0]], h_inf.f[case_init.K[1]]])
+	else:
+		return 2.0 * xp.array([h_inf.f[case_init.K[0]], xp.nan])
+
+def critical_surface(case, case_init):
+	timestr = time.strftime("%Y%m%d_%H%M")
+	epsilon_ = xp.linspace(0.0, 1.0, case.Ncs)
+	pool = multiprocessing.Pool(NumCores)
+	data = []
+	compfun = partial(compute_cr, case=case, case_init=case_init)
+	for result in tqdm(pool.imap(compfun, iterable=epsilon_), total=len(epsilon_)):
+		data.append(result)
+	data = xp.array(data).transpose()
+	if case.SaveData:
+		save_data('RG_critical_surface', data, timestr, case.params, case_init)
+	if case.PlotResults:
+		fig = plt.figure()
+		ax = fig.gca()
+		ax.set_box_aspect(1)
+		plt.plot(data[0, :], data[1, :], color='b', linewidth=2)
+		ax.set_xlim(case_init.KampInf[0], case_init.KampSup[0])
+		ax.set_ylim(case_init.KampInf[1], case_init.KampSup[1])
+		plt.show()
+
+def converge_point(val1, val2, case, case_init):
+	k_amp_ = case_init.KampSup.copy()
+	k_amp_[0] = val1
+	k_amp_[1] = val2
+	h_ = case.generate_1Hamiltonian(case_init.K, k_amp_, case_init.Omega, symmetric=True)
+	return [int(case.converge(h_)), h_.count], h_.error
+
+def converge_region(case, case_init):
+	timestr = time.strftime("%Y%m%d_%H%M")
+	x_vec = xp.linspace(case_init.KampInf[0], case_init.KampSup[0], case.Ncs)
+	y_vec = xp.linspace(case_init.KampInf[1], case_init.KampSup[1], case.Ncs)
+	pool = multiprocessing.Pool(NumCores)
+	data = []
+	info = []
+	for y_ in tqdm(y_vec):
+		converge_point_ = partial(converge_point, val2=y_, case=case, case_init=case_init)
+		for result_data, result_info in tqdm(pool.imap(converge_point_, iterable=x_vec), total=case.Ncs, leave=False):
+			data.append(result_data)
+			info.append(result_info)
+		if case.SaveData:
+			save_data('RG_converge_region', data, timestr, case.params, case_init)
+	if case.SaveData:
+		save_data('RG_converge_region', xp.array(data).reshape((case.Ncs, case.Ncs, 2)), timestr, case.params, case_init, info=xp.array(info).reshape((case.Ncs, case.Ncs, 2)))
+	if case.PlotResults:
+		fig = plt.figure()
+		ax = fig.gca()
+		ax.set_box_aspect(1)
+		im = ax.pcolor(x_vec, y_vec, xp.array(data)[:, 0].reshape((case.Ncs, case.Ncs)).astype(int), cmap='Reds_r')
+		ax.set_xlim(case_init.KampInf[0], case_init.KampSup[0])
+		ax.set_ylim(case_init.KampInf[1], case_init.KampSup[1])
+		fig.colorbar(im)
+		plt.show()
+
+def approach_set(k, set1, set2, case, dist, strict):
+	set1[k], set2[k] = case.approach(set1[k], set2[k], dist=dist, strict=strict)
+
+def iterate_circle(case, case_init):
+	start = time.time()
+	h_inf, h_sup = case.generate_2Hamiltonians(case_init)
+	h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.DistSurf, strict=True)
+	h_inf = case.renormalization_group(h_inf)
+	h_sup = case.renormalization_group(h_sup)
+	h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.DistCircle, strict=True)
+	if (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
+		print('starting circle')
+		timestr = time.strftime("%Y%m%d_%H%M")
+		hc_inf, hc_sup = case.approach(h_inf, h_sup, dist=case.DistSurf, strict=True)
+		v1 = xp.zeros((case.J+1,) + case.dim * (2*case.L+1,), dtype=case.Precision)
+		v2 = xp.zeros((case.J+1,) + case.dim * (2*case.L+1,), dtype=case.Precision)
+		v1[0][case.dim * xp.index_exp[:case.ModesPerturb]] = 2.0 * xp.random.random(case.dim * (case.ModesPerturb,)) - 1.0
+		v2[0][case.dim * xp.index_exp[:case.ModesPerturb]] = 2.0 * xp.random.random(case.dim * (case.ModesPerturb,)) - 1.0
+		v1 = case.sym(v1)
+		v2 = case.sym(v2)
+		v2 = v2 - xp.vdot(v2, v1) * v1 / xp.vdot(v1, v1)
+		v1 = case.Radius * v1 / xp.sqrt(xp.vdot(v1, v1))
+		v2 = case.Radius * v2 / xp.sqrt(xp.vdot(v2, v2))
+		circle_inf = []
+		circle_sup = []
+		for k_ in range(case.Nh+1):
+			h_inf_ = copy.deepcopy(h_inf)
+			h_sup_ = copy.deepcopy(h_sup)
+			theta = case.Precision(k_) * 2.0 * xp.pi / case.Precision(case.Nh)
+			h_inf_.f = h_inf.f + v1 * xp.cos(theta) + v2 * xp.sin(theta)
+			h_sup_.f = h_sup.f + v1 * xp.cos(theta) + v2 * xp.sin(theta)
+			circle_inf.append(h_inf_)
+			circle_sup.append(h_sup_)
+		pool = multiprocessing.Pool(NumCores)
+		approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, case=case, dist=case.DistSurf, strict=True)
+		pool.imap(approach_circle, iterable=range(case.Nh+1))
+		Coord = xp.zeros((case.Nh+1, 2, case.NumberOfIterations))
+		for i_ in trange(case.NumberOfIterations):
+			for k_ in range(case.Nh+1):
+				Coord[k_, :, i_] = [xp.vdot(circle_inf[k_].f - hc_inf.f, v1), xp.vdot(circle_inf[k_].f - hc_inf.f, v2)]
+			if case.SaveData:
+				save_data('RG_circle', Coord / case.Radius ** 2, timestr, case.params, case_init)
+			if case.PlotResults:
+				fig = plt.figure()
+				ax = fig.add_subplot(111)
+				ax.plot(Coord[:, 0, i_] / case.Radius ** 2, Coord[:, 1, i_] / case.Radius ** 2, label='%d -th iterate' % i_)
+				ax.legend()
+				plt.pause(1e-17)
+			renfunc = partial(case.renormalization_group)
+			circle_inf = pool.imap(renfunc, iterable=circle_inf)
+			circle_sup = pool.imap(renfunc, iterable=circle_sup)
+			approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, case=case, dist=case.DistSurf, strict=True)
+			pool.imap(approach_circle, iterable=range(case.Nh+1))
+			hc_inf = case.renormalization_group(hc_inf)
+			hc_sup = case.renormalization_group(hc_sup)
+			hc_inf, hc_sup = case.approach(hc_inf, hc_sup, dist=case.DistSurf, strict=True)
+		end = time.time()
+		print("Computation done in {} seconds".format(int(xp.rint(end-start))))
+		plt.show()
+	else:
+		print('Warning (iterate_circle): ' + h_inf.error + ' / ' + h_sup.error)
+
+def save_data(name, data, timestr, params, case_init, info=[]):
+    mdic = params.copy()
+    mdic.update({'case': case_init})
+    mdic.update({'data': data})
+    mdic.update({'info': info})
+    today = date.today()
+    date_today = today.strftime(" %B %d, %Y\n")
+    email = ' cristel.chandre@univ-amu.fr'
+    mdic.update({'date': date_today, 'author': email})
+    savemat(name + '_' + timestr + '.mat', mdic)
 
 if __name__ == "__main__":
 	main()
