@@ -12,7 +12,7 @@ font = 'Garamond 14 bold'
 font_color = '#000080'
 
 def main():
-	version_rgapp = '0.2'
+	version_rgapp = '0.3'
 	date_rgapp = time.strftime("%Y / %m / %d")
 
 	rg_app = tk.Tk()
@@ -75,7 +75,7 @@ def main():
 	val_positions = (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)
 	val_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
 
-	run_etiqs = 'Iterates', 'Circle', 'Critical Surface', 'Converge Region'
+	run_etiqs = 'Iterates', 'Circle Iterates', 'Critical Surface', 'Converge Region'
 	run_positions = (1, 3), (2, 3), (3, 3), (4, 3)
 	run_method = tk.StringVar()
 	run_method.set(run_etiqs[0])
@@ -113,9 +113,9 @@ def main():
 	case_lab.grid(row=0, column=0, padx=5)
 
 	val_params = definevar(tab_run, val_types, val_values)
-	val_par = makeform(tab_run, val_params, val_names, val_positions,(8, 15))
+	val_par = makeform(tab_run, val_params, val_names, val_positions, (7, 20))
 
-	tk.Label(tab_run, width=10, text=None, bg=color_bg).grid(row=0, column=2)
+	tk.Label(tab_run, width=5, text=None, bg=color_bg).grid(row=0, column=2)
 
 	run_button = tk.Button(tab_run, text='Run', highlightbackground=color_bg, width=18,\
 	 	command= lambda : rg_run(run_method, case_var, mp_names, mp_par, mpc_names, mpc_par, adv_names, adv_par, adv2_names, adv2_par, tol_names, tol_par, val_params)).grid(row=8, column=3, sticky='w')
@@ -171,7 +171,7 @@ def makeform(root, fields, names, positions, width):
 		lab = tk.Label(root, width=width[0], text=name, anchor='e', bg=color_bg, font=font, fg=font_color)
 		ent = tk.Entry(root, width=width[1], textvariable=field, bg=color_bg)
 		lab.grid(row=position[0], column=position[1], pady=5)
-		ent.grid(row=position[0], column=position[1]+1, pady=5, padx=5)
+		ent.grid(row=position[0], column=position[1]+1, pady=5)
 		entries.append((field, ent))
 	return entries
 
@@ -209,7 +209,7 @@ def rg_run(run_method, case_var, mp_names, mp_par, mpc_names, mpc_par, adv_names
 	case_study = RG.RG(case_init, params)
 	if run_method.get() == 'Iterates':
 		case_study.iterates(case_init)
-	elif run_method.get() == 'Circle':
+	elif run_method.get() == 'Circle Iterates':
 		case_study.iterate_circle(case_init)
 	elif run_method.get() == 'Critical Surface':
 		case_study.critical_surface(case_init)
@@ -228,7 +228,7 @@ def define_case(case, val_params):
 	elif case == 'SpiralMean':
 	    N = [[0, 0, 1], [1, 0, 0], [0, 1, -1]]
 	    sigma = 1.3247179572447460259
-	    Eigenvalues = [1.0 / sigma]
+	    #Eigenvalues = [1.0 / sigma]
 	    omega_0 = (sigma**2, sigma, 1.0)
 	    Omega = [1.0, 1.0, -1.0]
 	    K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
@@ -239,7 +239,7 @@ def define_case(case, val_params):
 	    Tau = 0.445041867912629
 	    Tau2 = 1.801937735804839
 	    Tau3 = -1.246979603717467
-	    Eigenvalues = [Tau, Tau2, Tau3]
+	    #Eigenvalues = [Tau, Tau2, Tau3]
 	    omega_0 = (1.0, Tau, 1.0 - Tau - Tau**2)
 	    Omega = [1.0, 1.0, -1.0]
 	    K = ((0, 0, -1, 1), (0, 1, -1, -1), (0, 0, 0, 1))
@@ -248,7 +248,7 @@ def define_case(case, val_params):
 	elif case == 'OMean':
 	    N = [[0, 0, 1], [1, 0, -1], [0, 1, 0]]
 	    o_val = 0.682327803828019
-	    Eigenvalues = [o_val]
+	    #Eigenvalues = [o_val]
 	    omega_0 = (1.0, o_val, o_val**2)
 	    Omega = [1.0, 1.0, 1.0]
 	    K = ((0, 1, -1, -1), (0, 0, 1, -1), (0, 1, -1, 0))
