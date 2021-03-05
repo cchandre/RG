@@ -4,11 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib import cm
 import scipy.signal as sps
-from scipy.io import savemat
 import copy
-import time
-from datetime import date
-import warnings
 
 class Hamiltonian:
     def __init__(self, omega, f, error=[0, 0], count=0):
@@ -17,50 +13,19 @@ class Hamiltonian:
         self.error = error
         self.count = count
 
-class CaseInit:
-    def __init__(self, N, omega_0, Omega, k, kinf, ksup):
-        self.N = N
-        self.omega_0 = omega_0
-        self.Omega = Omega
-        self.K = k
-        self.KampInf = kinf
-        self.KampSup = ksup
-
 class RG:
-    def __init__(self, case, params):
-        if params['Precision'] == 32:
+    def __init__(self, dict_param):
+        for key in dict_param:
+            setattr(self, key, dict_param[key])
+        if self.Precision == 32:
             self.Precision = xp.float32
-        elif params['Precision'] == 128:
+        elif self.Precision == 128:
             self.Precision = xp.float128
         else:
             self.Precision = xp.float64
-        self.params = params
-        self.L = params['L']
-        self.J = params['J']
-        self.TolMin = params['TolMin']
-        self.TolMax = params['TolMax']
-        self.TolLie = params['TolLie']
-        self.DistSurf = params['DistSurf']
-        self.MaxLie = params['MaxLie']
-        self.MaxIter = params['MaxIter']
-        self.Sigma = params['Sigma']
-        self.Kappa = params['Kappa']
-        self.SaveData = params['SaveData']
-        self.PlotResults = params['PlotResults']
-        self.ChoiceIm = params['ChoiceIm']
-        self.NormChoice = params['NormChoice']
-        self.CanonicalTransformation = params['CanonicalTransformation']
-        self.NumberOfIterations = params['NumberOfIterations']
-        self.MaxA = params['MaxA']
-        self.DistCircle = params['DistCircle']
-        self.Radius = params['Radius']
-        self.ModesPerturb = params['ModesPerturb']
-        self.Nh = params['Nh']
-        self.Ncs = params['Ncs']
-        self.TolCS = params['TolCS']
-        self.N = xp.asarray(case.N, dtype=int)
-        self.dim = len(case.omega_0)
-        self.omega_0 = xp.asarray(case.omega_0, dtype=self.Precision)
+        self.N = xp.asarray(self.N, dtype=int)
+        self.dim = len(self.omega_0)
+        self.omega_0 = xp.asarray(self.omega_0, dtype=self.Precision)
         self.zero_ = self.dim * (0,)
         self.one_ = self.dim * (1,)
         self.L_ = self.dim * (self.L,)
@@ -87,8 +52,6 @@ class RG:
             norm_w_nu = LA.norm(w_nu, axis=0).reshape(self.reshape_J)
             comp_im = self.Sigma * xp.repeat(norm_w_nu, self.J+1, axis=0) + self.Kappa * self.J_
             inv_eig = xp.sort(1.0 / xp.abs(eigenval))[::-1]
-            if inv_eig[1] + self.Sigma * (inv_eig[0] - inv_eig[1]) >= 1:
-                print('Sigma is too large')
         omega_0_nu_ = xp.repeat(xp.abs(self.omega_0_nu), self.J+1, axis=0) / xp.sqrt((self.omega_0 ** 2).sum())
         self.iminus = omega_0_nu_ > comp_im
         self.nu_mask = xp.index_exp[:self.J+1]
@@ -103,7 +66,7 @@ class RG:
             self.reshape_cs = (1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (2*self.L+1,)
             self.reshape_t = (self.J+1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
             self.reshape_av = (1,) + self.dim * (1,) + (self.J+1,) + self.dim * (1,)
-            sum_dim = tuple(range(self.dim+1))
+            self.sum_dim = tuple(range(self.dim+1))
             self.Je_ = xp.arange(self.J+1, dtype=self.Precision).reshape(self.reshape_Le)
             self.omega_0_nu_e = self.omega_0_nu.reshape(self.reshape_Je)
             self.oa_vec = 2.0 * self.MaxA * xp.random.rand(self.J+1) - self.MaxA
@@ -293,9 +256,9 @@ class RG:
         f_[2][self.zero_] = 0.5
         return Hamiltonian(omega, f_)
 
-    def generate_2Hamiltonians(self, case_init):
-        h_inf = self.generate_1Hamiltonian(case_init.K, case_init.KampInf, case_init.Omega, symmetric=True)
-        h_sup = self.generate_1Hamiltonian(case_init.K, case_init.KampSup, case_init.Omega, symmetric=True)
+    def generate_2Hamiltonians(self):
+        h_inf = self.generate_1Hamiltonian(self.K, self.KampInf, self.Omega, symmetric=True)
+        h_sup = self.generate_1Hamiltonian(self.K, self.KampSup, self.Omega, symmetric=True)
         if not self.converge(h_inf):
             h_inf.error = [4, 0]
         if self.converge(h_sup):

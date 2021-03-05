@@ -2,6 +2,7 @@ import numpy as xp
 import tkinter as tk
 from tkinter import ttk
 import time
+from datetime import date
 from itertools import chain
 import multiprocessing
 import RG_classes_functions as RG
@@ -9,6 +10,7 @@ import matplotlib.pyplot as plt
 import copy
 from functools import partial
 from tqdm import tqdm, trange
+from scipy.io import savemat
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -17,11 +19,15 @@ font = 'Garamond 14 bold'
 font_color = '#000080'
 NumCores = multiprocessing.cpu_count()
 
-def main():
-	version_rgapp = '0.3'
-	date_rgapp = time.strftime("%Y / %m / %d")
+version_rgapp = '0.3'
+date_rgapp = time.strftime("%Y / %m / %d")
 
+def main():
 	rg_app = tk.Tk()
+	style = ttk.Style()
+	style.theme_use('clam')
+	style.configure('.', background=color_bg)
+	style.configure('.', foreground=font_color)
 	rg_app.title("Renormalization Group for Hamiltonians")
 	window_x = 680
 	window_y = 400
@@ -33,102 +39,83 @@ def main():
 	rg_app.geometry(geo)
 	rg_app.resizable(False, False)
 	rg_app.configure(bg=color_bg)
-	style = ttk.Style()
-	style.theme_use('clam')
-	style.configure('.', background=color_bg)
-	style.configure('.', foreground=font_color)
 
 	tab_parent = ttk.Notebook(rg_app)
-	tab_param = ttk.Frame(tab_parent)
-	tab_advanced = ttk.Frame(tab_parent)
-	tab_run = ttk.Frame(tab_parent)
+	tab_main = ttk.Frame(tab_parent)
+	tab_params = ttk.Frame(tab_parent)
+	tab_options = ttk.Frame(tab_parent)
 	tab_about = ttk.Frame(tab_parent)
-	tab_parent.add(tab_run, text="Main")
-	tab_parent.add(tab_param, text="Parameters")
-	tab_parent.add(tab_advanced, text="Advanced")
+	tab_parent.add(tab_main, text="Main")
+	tab_parent.add(tab_params, text="RG Parameters")
+	tab_parent.add(tab_options, text="Options")
 	tab_parent.add(tab_about, text="About")
 	tab_parent.pack(expand=1, fill='both')
 
-	mp_names = 'L', 'J', 'Sigma', 'Kappa', 'NumberOfIterations', 'Ncs', 'TolCS'
-	mp_types = 'Int', 'Int', 'Double', 'Double', 'Int', 'Int', 'Double'
-	mp_values = 5, 5, 0.4, 0.1, 10, 100, 1e-7
-	mp_positions = (1, 0), (2, 0), (4,0), (5, 0), (8, 0), (7, 5), (8, 5)
+	case_names = 'N', 'omega_0', 'Omega', 'K', 'KampInf', 'KampSup'
+	case_types = 'Char', 'Char', 'Char', 'Char', 'Char', 'Char'
+	case_positions = (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)
+	case_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
+	case_options = ('GoldenMean', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
 
-	mpc_names = 'SaveData', 'PlotResults'
-	mpc_types = 'Bool', 'Bool'
-	mpc_values = True, False
-	mpc_positions = (7, 3), (6, 3)
+	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'MaxA'
+	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double'
+	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+9), 1e-11, 5000, 5000, 0.2
+	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (4, 2), (7, 2), (7, 0)
 
-	tol_names = 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'DistSurf'
-	tol_types = 'Double', 'Double', 'Double', 'Int', 'Int', 'Double'
-	tol_values = 1e-9, '{:1.0e}'.format(1e+9), 1e-11, 5000, 5000, 1e-7
-	tol_positions = (1, 3), (2, 3), (5, 3), (3, 3), (6, 3), (8, 3)
+	menu_rg_names = 'ChoiceIm', 'CanonicalTransformation', 'NormChoice', 'Precision'
+	menu_rg_types = 'Char', 'Char', 'Char', 'Int'
+	menu_rg_values = 'AK2000', 'Lie', 'sum', 64
+	menu_rg_menus = ('AK2000', 'K1999', 'AKP1998'), ('Lie', 'Type2', 'Type3'), ('sum', 'max', 'Euclidian', 'Analytic'), (32, 64, 128)
+	menu_rg_positions = (0, 4), (5, 4), (3, 4), (7, 4)
+	menu_rg_commands = None, None, None, None
 
-	adv_names = 'ChoiceIm', 'CanonicalTransformation', 'NormChoice', 'Precision'
-	adv_types = 'Char', 'Char', 'Char', 'Int'
-	adv_values = 'AK2000', 'Lie', 'sum', 64
-	adv_menus = ('AK2000', 'K1999', 'AKP1998'), ('Lie', 'Type2', 'Type3'), ('sum', 'max', 'Euclidian', 'Analytic'), (32, 64, 128)
-	adv_positions = (1, 0), (5, 0), (3, 0), (8, 0)
-	adv_commands = None, None, None, None
+	output_names = 'SaveData', 'PlotResults'
+	output_types = 'Bool', 'Bool'
+	output_values = True, False
+	output_positions = (6, 3), (7, 3)
 
-	adv2_names = 'MaxA', 'DistCircle', 'Radius', 'ModesPerturb', 'Nh'
-	adv2_types = 'Double', 'Double', 'Double', 'Int', 'Int'
-	adv2_values = 0.2, 1e-5, 1e-5, 3, 10
-	adv2_positions = (5, 3), (1, 3), (2, 3), (3, 3), (4, 3)
+	option_names = 'DistSurf', 'DistCircle', 'Radius', 'ModesPerturb', 'Nh', 'Ncs', 'TolCS', 'NumberOfIterations'
+	option_types = 'Double', 'Double', 'Double', 'Int', 'Int', 'Int', 'Double', 'Int'
+	option_values = 1e-7, 1e-5, 1e-5, 3, 10, 100, 1e-7, 10
+	option_positions = (1, 0), (1, 3), (3, 3), (5, 3), (7, 3), (5, 0), (7, 0), (3, 0)
 
-	val_names = 'N', 'omega_0', 'Omega', 'K', 'KampInf', 'KampSup'
-	val_types = 'Char', 'Char', 'Char', 'Char', 'Char', 'Char'
-	val_positions = (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)
-	val_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
-
+	case_vars = definevar(tab_main, case_types, case_values)
+	makeform(tab_main, case_vars, case_names, case_positions, (7, 20))
+	tk.Label(tab_main, width=20, text='Choose frequency vector:', anchor='w', bg=color_bg, pady=5, font=font, fg=font_color).grid(row=0, column=0, padx=5)
+	choice_case = tk.StringVar(tab_main, value=case_options[0])
+	tk.OptionMenu(tab_main, choice_case, *case_options, command= lambda x: define_case(x, case_vars)).grid(row=0, column=1, padx=5, sticky='w')
+	tk.Label(tab_main, width=10, text=None, bg=color_bg).grid(row=0, column=2)
+	tk.Label(tab_main, width=20, text='Choose method:', anchor='w', bg=color_bg, pady=5, font=font, fg=font_color).grid(row=0, column=3, padx=5)
 	run_etiqs = 'Iterates', 'Circle Iterates', 'Critical Surface', 'Converge Region'
 	run_positions = (1, 3), (2, 3), (3, 3), (4, 3)
 	run_method = tk.StringVar()
 	run_method.set(run_etiqs[0])
 	for (run_etiq, run_position) in zip(run_etiqs, run_positions):
-		b_method = tk.Radiobutton(tab_run, variable=run_method, text=run_etiq, value=run_etiq, width=15, anchor='w', bg=color_bg)
-		b_method.grid(row=run_position[0], column=run_position[1], sticky='w')
+		tk.Radiobutton(tab_main, variable=run_method, text=run_etiq, value=run_etiq, width=15, anchor='w', bg=color_bg).grid(row=run_position[0], column=run_position[1], sticky='w')
+	output_vars = definevar(tab_main, output_types, output_values)
+	makechecks(tab_main, output_vars, output_names, output_positions)
 
-	case_options = ('GoldenMean', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
+	param_rg_vars = definevar(tab_params, param_rg_types, param_rg_values)
+	makeform(tab_params, param_rg_vars, param_rg_names, param_rg_positions, (8, 5))
+	tk.Label(tab_params, width=10, text=None, bg=color_bg).grid(row=0, column=2)
+	menu_rg_vars = definevar(tab_params, menu_rg_types, menu_rg_values)
+	makemenus(tab_params, menu_rg_vars, menu_rg_names, menu_rg_menus, menu_rg_positions)
 
-	mp_params = definevar(tab_param, mp_types, mp_values)
-	mp_par = makeform(tab_param, mp_params, mp_names, mp_positions, (14, 4))
+	option_vars = definevar(tab_options, option_types, option_values)
+	makeform(tab_options, option_vars, option_names, option_positions, (14, 8))
+	tk.Label(tab_options, width=10, text=None, bg=color_bg).grid(row=0, column=2)
 
-	tk.Label(tab_param, width=10, text=None, bg=color_bg).grid(row=0, column=2)
+	parameters = [case_names + param_rg_names + menu_rg_names, case_vars + param_rg_vars + menu_rg_vars]
 
-	mpc_params = definevar(tab_run, mpc_types, mpc_values)
-	mpc_par = makechecks(tab_run, mpc_params, mpc_names, mpc_positions)
+	options = [output_names + option_names, output_vars + option_vars]
 
-	tol_params = definevar(tab_param, tol_types, tol_values)
-	tol_par = makeform(tab_param, tol_params, tol_names, tol_positions, (8, 6))
+	tabs = [tab_main, tab_params, tab_options, tab_about]
 
-	adv_params = definevar(tab_advanced, adv_types, adv_values)
-	adv_par = makemenus(tab_advanced, adv_params, adv_names, adv_menus, adv_positions)
-
-	tk.Label(tab_advanced, width=10, text=None, bg=color_bg).grid(row=0, column=2)
-
-	adv2_params = definevar(tab_advanced, adv2_types, adv2_values)
-	adv2_par = makeform(tab_advanced, adv2_params, adv2_names, adv2_positions, (12, 8))
-
-	choice_ml = tk.Label(tab_run, width=20, text='Choose method:', anchor='w', bg=color_bg, pady=5, font=font, fg=font_color)
-	choice_ml.grid(row=0, column=3, padx=5)
-	case_lab = tk.Label(tab_run, width=20, text='Choose frequency vector:', anchor='w', bg=color_bg, pady=5, font=font, fg=font_color)
-	case_var = tk.StringVar(tab_run, value=case_options[0])
-	case_menu = tk.OptionMenu(tab_run, case_var, *case_options, command= lambda x: define_case(x, val_params))
-	case_menu.grid(row=1, column=0, padx=5, sticky='w')
-	case_lab.grid(row=0, column=0, padx=5)
-
-	val_params = definevar(tab_run, val_types, val_values)
-	val_par = makeform(tab_run, val_params, val_names, val_positions, (7, 20))
-
-	tk.Label(tab_run, width=5, text=None, bg=color_bg).grid(row=0, column=2)
-
-	run_button = tk.Button(tab_run, text='Run', highlightbackground=color_bg, width=18,\
-	 	command= lambda : rg_run(run_method, case_var, mp_names, mp_par, mpc_names, mpc_par, adv_names, adv_par, adv2_names, adv2_par, tol_names, tol_par, val_params)).grid(row=8, column=3, sticky='w')
-	#tk.Button(tab_run, text='Quit', command=rg_app.quit, bg=color_bg).grid(row=8, column=4)
+	run_button = tk.Button(tab_main, text='Run', highlightbackground=color_bg, width=15,\
+	 	command= lambda : rg_run(run_method, parameters, options, tabs)).grid(row=8, column=3, sticky='w')
+	tk.Label(tab_main, width=10, text=None, bg=color_bg).grid(row=9, column=0)
 
 	tk.Label(tab_about, width=10, text=None, bg=color_bg).grid(row=0, column=2)
-
 	errorcode = tk.Text(tab_about, height=9, width=35, pady=10, bg=color_bg, font=font, fg=font_color)
 	errorcode.insert(tk.INSERT, "ERROR CODES\n\n")
 	errorcode.insert(tk.INSERT, "    k-th Lie transform diverging: [1, k]\n")
@@ -172,57 +159,48 @@ def definevar(root, types, values):
 	return paramlist
 
 def makeform(root, fields, names, positions, width):
-	entries = []
 	for (field, name, position) in zip(fields, names, positions):
 		lab = tk.Label(root, width=width[0], text=name, anchor='e', bg=color_bg, font=font, fg=font_color)
 		ent = tk.Entry(root, width=width[1], textvariable=field, bg=color_bg)
 		lab.grid(row=position[0], column=position[1], pady=5)
-		ent.grid(row=position[0], column=position[1]+1, pady=5)
-		entries.append((field, ent))
-	return entries
+		ent.grid(row=position[0], column=position[1]+1)
 
 def makemenus(root, fields, names, menus, positions):
-	entries = []
 	for (field, name, menu, position) in zip(fields, names, menus, positions):
 		lab = tk.Label(root, width=18, text=name, anchor='e', bg=color_bg, font=font, fg=font_color)
 		men = tk.OptionMenu(root, field, * menu)
 		lab.grid(row=position[0], column=position[1], pady=5, sticky='e')
-		men.grid(row=position[0], column=position[1]+1, pady=5, padx=5, sticky='e')
-		entries.append((field, men))
-	return entries
+		men.grid(row=position[0]+1, column=position[1], pady=5, sticky='e')
 
 def makechecks(root, fields, names, positions):
-	entries = []
 	for (field, name, position) in zip(fields, names, positions):
 		chec = tk.Checkbutton(root, text=name, variable=field, onvalue=True, offvalue=False, bg=color_bg, font=font, fg=font_color)
 		chec.grid(row=position[0], column=position[1], sticky='w')
-		entries.append((field, chec))
-	return entries
 
-def rg_run(run_method, case_var, mp_names, mp_par, mpc_names, mpc_par, adv_names, adv_par, adv2_names, adv2_par, tol_names, tol_par, val_params):
-	params = dict()
-	for (name, entry) in chain(zip(mp_names, mp_par), zip(mpc_names, mpc_par),\
-	 zip(adv_names, adv_par), zip(adv2_names, adv2_par), zip(tol_names, tol_par)):
-		params[name] = entry[0].get()
-	N = list(eval(val_params[0].get()))
-	omega_0 = list(eval(val_params[1].get()))
-	Omega = list(eval(val_params[2].get()))
-	K = list(eval(val_params[3].get()))
-	KampInf = list(eval(val_params[4].get()))
-	KampSup = list(eval(val_params[5].get()))
-	case_init = RG.CaseInit(N, omega_0, Omega, K, KampInf, KampSup)
-	case_study = RG.RG(case_init, params)
+def rg_run(run_method, parameters, options, tabs):
+	dict_param = dict()
+	for (name, var) in zip(parameters[0], parameters[1]):
+		dict_param[name] = var.get()
+	for (name, var) in zip(options[0], options[1]):
+		dict_param[name] = var.get()
+	dict_param['N'] = list(eval(dict_param['N']))
+	dict_param['omega_0'] = list(eval(dict_param['omega_0']))
+	dict_param['Omega'] = list(eval(dict_param['Omega']))
+	dict_param['K'] = list(eval(dict_param['K']))
+	dict_param['KampInf'] = list(eval(dict_param['KampInf']))
+	dict_param['KampSup'] = list(eval(dict_param['KampSup']))
+	case_study = RG.RG(dict_param)
 	if run_method.get() == 'Iterates':
-		iterates(case_study, case_init)
+		iterates(case_study, tabs)
 	elif run_method.get() == 'Circle Iterates':
-		case_study.iterate_circle(case_init)
+		iterate_circle(case_study,tabs)
 	elif run_method.get() == 'Critical Surface':
-		critical_surface(case_study, case_init)
+		critical_surface(case_study, tabs)
 	elif run_method.get() == 'Converge Region':
-		converge_region(case_study, case_init)
+		converge_region(case_study, tabs)
 
-def define_case(case, val_params):
-	if case == 'GoldenMean':
+def define_case(case_option, params):
+	if case_option == 'GoldenMean':
 	    N = [[1, 1], [1, 0]]
 	    Eigenvalues = [-0.618033988749895, 1.618033988749895]
 	    omega_0 = (Eigenvalues[0], 1.0)
@@ -230,7 +208,7 @@ def define_case(case, val_params):
 	    K = ((0, 1, 0), (0, 1, 1))
 	    KampInf = [0.02, 0.02]
 	    KampSup = [0.04, 0.04]
-	elif case == 'SpiralMean':
+	elif case_option == 'SpiralMean':
 	    N = [[0, 0, 1], [1, 0, 0], [0, 1, -1]]
 	    sigma = 1.3247179572447460259
 	    #Eigenvalues = [1.0 / sigma]
@@ -239,7 +217,7 @@ def define_case(case, val_params):
 	    K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
 	    KampInf = [0.034, 0.089, 0.1]
 	    KampSup = [0.036, 0.091, 0.1]
-	elif case == 'TauMean':
+	elif case_option == 'TauMean':
 	    N = [[0, 1, -1], [1, -1, 1], [0, -1, 2]]
 	    Tau = 0.445041867912629
 	    Tau2 = 1.801937735804839
@@ -250,7 +228,7 @@ def define_case(case, val_params):
 	    K = ((0, 0, -1, 1), (0, 1, -1, -1), (0, 0, 0, 1))
 	    KampInf = [0.0, 0.0, 0.0]
 	    KampSup = [0.1, 0.1, 0.1]
-	elif case == 'OMean':
+	elif case_option == 'OMean':
 	    N = [[0, 0, 1], [1, 0, -1], [0, 1, 0]]
 	    o_val = 0.682327803828019
 	    #Eigenvalues = [o_val]
@@ -259,7 +237,7 @@ def define_case(case, val_params):
 	    K = ((0, 1, -1, -1), (0, 0, 1, -1), (0, 1, -1, 0))
 	    KampInf = [0.0, 0.0, 0.0]
 	    KampSup = [0.1, 0.1, 0.1]
-	elif case == 'EtaMean':
+	elif case_option == 'EtaMean':
 	    N = [[-1, 1, 0], [1, 1, 1], [0, 1, 0]]
 	    Eta = -0.347296355333861
 	    Eta2 = -1.532088886237956
@@ -270,21 +248,24 @@ def define_case(case, val_params):
 	    K = ((0, 1, 1, 1), (0, -1, 1, 0), (0, 0, 1, 0))
 	    KampInf = [0.0, 0.0, 0.0]
 	    KampSup = [0.1, 0.1, 0.1]
-	val_params[0].set(str(N))
-	val_params[1].set(str(omega_0))
-	val_params[2].set(str(Omega))
-	val_params[3].set(str(K))
-	val_params[4].set(str(KampInf))
-	val_params[5].set(str(KampSup))
+	params[0].set(str(N))
+	params[1].set(str(omega_0))
+	params[2].set(str(Omega))
+	params[3].set(str(K))
+	params[4].set(str(KampInf))
+	params[5].set(str(KampSup))
 
-def iterates(case, case_init):
-	h_inf, h_sup = case.generate_2Hamiltonians(case_init)
+def iterates(case, tabs):
+	h_inf, h_sup = case.generate_2Hamiltonians()
 	if (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
 		timestr = time.strftime("%Y%m%d_%H%M")
 		if case.PlotResults:
 			case.plotf(h_sup.f[0])
 		start = time.time()
 		data = []
+		progress = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=case.NumberOfIterations, mode='indeterminate')
+		progress.grid(row=10, column=0, columnspan=4, sticky='s')
+		progress['value'] = 0
 		k_ = 0
 		while (k_ < case.NumberOfIterations) and (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
 			k_ += 1
@@ -293,7 +274,7 @@ def iterates(case, case_init):
 			h_inf_ = case.renormalization_group(h_inf)
 			h_sup_ = case.renormalization_group(h_sup)
 			if k_ == 1:
-				print('Critical parameter = {}'.format(2.0 * h_inf.f[case_init.K[0]]))
+				print('Critical parameter = {}'.format(2.0 * h_inf.f[case.K[0]]))
 			if case.PlotResults:
 				case.plotf(h_inf_.f[0])
 			mean2_p = 2.0 * h_inf.f[2][case.zero_]
@@ -305,9 +286,12 @@ def iterates(case, case_init):
 			end_k = time.time()
 			print("diff = %.3e    delta = %.7f   <f2> = %.7f    (done in %d seconds)" % \
 					(diff_p, delta_p, mean2_p, int(xp.rint(end_k-start_k))))
+			progress['value'] += 1
+			progress.update()
 			if case.SaveData:
 				info = 'diff     delta     <f2>'
-				save_data('RG_iterates', data, timestr, case.params, case_init, info=info)
+				save_data('RG_iterates', data, timestr, case, info=info)
+		progress.destroy()
 		if (k_ < case.NumberOfIterations):
 			print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
 		end = time.time()
@@ -316,80 +300,98 @@ def iterates(case, case_init):
 	else:
 		print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
 
-def compute_cr(epsilon, case, case_init):
-	k_inf_ = case_init.KampInf.copy()
-	k_sup_ = case_init.KampSup.copy()
-	k_inf_[0] = case_init.KampInf[0] + epsilon * (case_init.KampSup[0] - case_init.KampInf[0])
+def compute_cr(epsilon, case):
+	k_inf_ = case.KampInf.copy()
+	k_sup_ = case.KampSup.copy()
+	k_inf_[0] = case.KampInf[0] + epsilon * (case.KampSup[0] - case.KampInf[0])
 	k_sup_[0] = k_inf_[0]
-	case_ = copy.deepcopy(case_init)
+	case_ = copy.deepcopy(case)
 	case_.KampInf = k_inf_
 	case_.KampSup = k_sup_
-	h_inf, h_sup = case.generate_2Hamiltonians(case_)
+	h_inf, h_sup = case_.generate_2Hamiltonians()
 	if case.converge(h_inf) and (not case.converge(h_sup)):
 		h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.TolCS)
-		return 2.0 * xp.array([h_inf.f[case_init.K[0]], h_inf.f[case_init.K[1]]])
+		return 2.0 * xp.array([h_inf.f[case.K[0]], h_inf.f[case.K[1]]])
 	else:
-		return 2.0 * xp.array([h_inf.f[case_init.K[0]], xp.nan])
+		return 2.0 * xp.array([h_inf.f[case.K[0]], xp.nan])
 
-def critical_surface(case, case_init):
+def critical_surface(case, tabs):
 	timestr = time.strftime("%Y%m%d_%H%M")
 	epsilon_ = xp.linspace(0.0, 1.0, case.Ncs)
 	pool = multiprocessing.Pool(NumCores)
 	data = []
-	compfun = partial(compute_cr, case=case, case_init=case_init)
-	for result in tqdm(pool.imap(compfun, iterable=epsilon_), total=len(epsilon_)):
+	compfun = partial(compute_cr, case=case)
+	progress = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=len(epsilon_), mode='determinate')
+	progress.grid(row=10, column=0, columnspan=4, sticky='s')
+	progress['value'] = 0
+	for result in pool.imap(compfun, iterable=epsilon_):
+		progress['value'] += 1
+		progress.update()
 		data.append(result)
+	progress.destroy()
 	data = xp.array(data).transpose()
 	if case.SaveData:
-		save_data('RG_critical_surface', data, timestr, case.params, case_init)
+		save_data('RG_critical_surface', data, timestr, case)
 	if case.PlotResults:
 		fig = plt.figure()
 		ax = fig.gca()
 		ax.set_box_aspect(1)
 		plt.plot(data[0, :], data[1, :], color='b', linewidth=2)
-		ax.set_xlim(case_init.KampInf[0], case_init.KampSup[0])
-		ax.set_ylim(case_init.KampInf[1], case_init.KampSup[1])
+		ax.set_xlim(case.KampInf[0], case.KampSup[0])
+		ax.set_ylim(case.KampInf[1], case.KampSup[1])
 		plt.show()
 
-def converge_point(val1, val2, case, case_init):
-	k_amp_ = case_init.KampSup.copy()
+def converge_point(val1, val2, case):
+	k_amp_ = case.KampSup.copy()
 	k_amp_[0] = val1
 	k_amp_[1] = val2
-	h_ = case.generate_1Hamiltonian(case_init.K, k_amp_, case_init.Omega, symmetric=True)
+	h_ = case.generate_1Hamiltonian(case.K, k_amp_, case.Omega, symmetric=True)
 	return [int(case.converge(h_)), h_.count], h_.error
 
-def converge_region(case, case_init):
+def converge_region(case, tabs):
 	timestr = time.strftime("%Y%m%d_%H%M")
-	x_vec = xp.linspace(case_init.KampInf[0], case_init.KampSup[0], case.Ncs)
-	y_vec = xp.linspace(case_init.KampInf[1], case_init.KampSup[1], case.Ncs)
+	x_vec = xp.linspace(case.KampInf[0], case.KampSup[0], case.Ncs)
+	y_vec = xp.linspace(case.KampInf[1], case.KampSup[1], case.Ncs)
 	pool = multiprocessing.Pool(NumCores)
 	data = []
 	info = []
-	for y_ in tqdm(y_vec):
-		converge_point_ = partial(converge_point, val2=y_, case=case, case_init=case_init)
-		for result_data, result_info in tqdm(pool.imap(converge_point_, iterable=x_vec), total=case.Ncs, leave=False):
+	progress1 = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=case.Ncs, mode='determinate')
+	progress1.grid(row=10, column=0, columnspan=4, sticky='s')
+	progress1['value'] = 0
+	for y_ in y_vec:
+		converge_point_ = partial(converge_point, val2=y_, case=case)
+		progress2 = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=case.Ncs, mode='determinate')
+		progress2.grid(row=11, column=0, columnspan=4, sticky='s')
+		progress2['value'] = 0
+		for result_data, result_info in pool.imap(converge_point_, iterable=x_vec):
 			data.append(result_data)
 			info.append(result_info)
+			progress2['value'] += 1
+			progress2.update()
+		progress2.destroy()
 		if case.SaveData:
-			save_data('RG_converge_region', data, timestr, case.params, case_init)
+			save_data('RG_converge_region', data, timestr, case)
+		progress1['value'] += 1
+		progress1.update()
+	progress1.destroy()
 	if case.SaveData:
-		save_data('RG_converge_region', xp.array(data).reshape((case.Ncs, case.Ncs, 2)), timestr, case.params, case_init, info=xp.array(info).reshape((case.Ncs, case.Ncs, 2)))
+		save_data('RG_converge_region', xp.array(data).reshape((case.Ncs, case.Ncs, 2)), timestr, case, info=xp.array(info).reshape((case.Ncs, case.Ncs, 2)))
 	if case.PlotResults:
 		fig = plt.figure()
 		ax = fig.gca()
 		ax.set_box_aspect(1)
 		im = ax.pcolor(x_vec, y_vec, xp.array(data)[:, 0].reshape((case.Ncs, case.Ncs)).astype(int), cmap='Reds_r')
-		ax.set_xlim(case_init.KampInf[0], case_init.KampSup[0])
-		ax.set_ylim(case_init.KampInf[1], case_init.KampSup[1])
+		ax.set_xlim(case.KampInf[0], case.KampSup[0])
+		ax.set_ylim(case.KampInf[1], case.KampSup[1])
 		fig.colorbar(im)
 		plt.show()
 
 def approach_set(k, set1, set2, case, dist, strict):
 	set1[k], set2[k] = case.approach(set1[k], set2[k], dist=dist, strict=strict)
 
-def iterate_circle(case, case_init):
+def iterate_circle(case, tabs):
 	start = time.time()
-	h_inf, h_sup = case.generate_2Hamiltonians(case_init)
+	h_inf, h_sup = case.generate_2Hamiltonians()
 	h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.DistSurf, strict=True)
 	h_inf = case.renormalization_group(h_inf)
 	h_sup = case.renormalization_group(h_sup)
@@ -421,11 +423,14 @@ def iterate_circle(case, case_init):
 		approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, case=case, dist=case.DistSurf, strict=True)
 		pool.imap(approach_circle, iterable=range(case.Nh+1))
 		Coord = xp.zeros((case.Nh+1, 2, case.NumberOfIterations))
+		progress = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=case.NumberOfIterations, mode='determinate')
+		progress.grid(row=10, column=0, columnspan=4, sticky='s')
+		progress['value'] = 0
 		for i_ in trange(case.NumberOfIterations):
 			for k_ in range(case.Nh+1):
 				Coord[k_, :, i_] = [xp.vdot(circle_inf[k_].f - hc_inf.f, v1), xp.vdot(circle_inf[k_].f - hc_inf.f, v2)]
 			if case.SaveData:
-				save_data('RG_circle', Coord / case.Radius ** 2, timestr, case.params, case_init)
+				save_data('RG_circle', Coord / case.Radius ** 2, timestr, case)
 			if case.PlotResults:
 				fig = plt.figure()
 				ax = fig.add_subplot(111)
@@ -440,15 +445,18 @@ def iterate_circle(case, case_init):
 			hc_inf = case.renormalization_group(hc_inf)
 			hc_sup = case.renormalization_group(hc_sup)
 			hc_inf, hc_sup = case.approach(hc_inf, hc_sup, dist=case.DistSurf, strict=True)
+			progress['value'] += 1
+			progress.update()
+		progress.destroy()
 		end = time.time()
 		print("Computation done in {} seconds".format(int(xp.rint(end-start))))
 		plt.show()
 	else:
 		print('Warning (iterate_circle): ' + h_inf.error + ' / ' + h_sup.error)
 
-def save_data(name, data, timestr, params, case_init, info=[]):
+def save_data(name, data, timestr, params, case, info=[]):
     mdic = params.copy()
-    mdic.update({'case': case_init})
+    mdic.update({'case_': case})
     mdic.update({'data': data})
     mdic.update({'info': info})
     today = date.today()
