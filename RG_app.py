@@ -190,6 +190,7 @@ def rg_run(run_method, parameters, options, tabs):
 	dict_param['KampInf'] = list(eval(dict_param['KampInf']))
 	dict_param['KampSup'] = list(eval(dict_param['KampSup']))
 	case_study = RG.RG(dict_param)
+	case_study.DictParams = dict_param
 	if run_method.get() == 'Iterates':
 		iterates(case_study, tabs)
 	elif run_method.get() == 'Circle Iterates':
@@ -454,9 +455,8 @@ def iterate_circle(case, tabs):
 	else:
 		print('Warning (iterate_circle): ' + h_inf.error + ' / ' + h_sup.error)
 
-def save_data(name, data, timestr, params, case, info=[]):
-    mdic = params.copy()
-    mdic.update({'case_': case})
+def save_data(name, data, timestr, case, info=[]):
+    mdic = case.DictParams.copy()
     mdic.update({'data': data})
     mdic.update({'info': info})
     today = date.today()
