@@ -1,8 +1,5 @@
 import numpy as xp
 from numpy import linalg as LA
-import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-from matplotlib import cm
 import scipy.signal as sps
 import copy
 
@@ -51,7 +48,6 @@ class RG:
             w_nu = xp.einsum('ij,j...->i...', w_eig, self.nu)
             norm_w_nu = LA.norm(w_nu, axis=0).reshape(self.reshape_J)
             comp_im = self.Sigma * xp.repeat(norm_w_nu, self.J+1, axis=0) + self.Kappa * self.J_
-            inv_eig = xp.sort(1.0 / xp.abs(eigenval))[::-1]
         omega_0_nu_ = xp.repeat(xp.abs(self.omega_0_nu), self.J+1, axis=0) / xp.sqrt((self.omega_0 ** 2).sum())
         self.iminus = omega_0_nu_ > comp_im
         self.nu_mask = xp.index_exp[:self.J+1]
@@ -60,16 +56,16 @@ class RG:
             self.nu_mask += (self.nu[it][mask],)
             self.N_nu_mask += (N_nu[it][mask],)
         if self.CanonicalTransformation in ['Type2', 'Type3']:
-            self.reshape_Le = (self.J+1,) + self.dim * (1,) + (1,) + self.dim * (1,)
             self.reshape_Je = (1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
             self.reshape_oa = (self.J+1,) + self.dim * (1,) + (self.J+1,) + self.dim * (1,)
             self.reshape_cs = (1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (2*self.L+1,)
             self.reshape_t = (self.J+1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
             self.reshape_av = (1,) + self.dim * (1,) + (self.J+1,) + self.dim * (1,)
             self.sum_dim = tuple(range(self.dim+1))
-            self.Je_ = xp.arange(self.J+1, dtype=self.Precision).reshape(self.reshape_Le)
+            reshape_Le = (self.J+1,) + self.dim * (1,) + (1,) + self.dim * (1,)
+            self.Je_ = xp.arange(self.J+1, dtype=self.Precision).reshape(reshape_Le)
             self.omega_0_nu_e = self.omega_0_nu.reshape(self.reshape_Je)
-            self.oa_vec = 2.0 * self.MaxA * xp.random.rand(self.J+1) - self.MaxA
+            self.oa_vec = 2.0 * self.MaxCT * xp.random.rand(self.J+1) - self.MaxCT
             self.oa_mat = xp.vander(self.oa_vec, increasing=True).transpose()
             indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),) + self.dim * (xp.arange(0, 2*self.L+1),)
             nu_nu = xp.meshgrid(*indx, indexing='ij')
@@ -87,8 +83,8 @@ class RG:
             return xp.abs(fun).sum()
         elif self.NormChoice == 'Euclidian':
             return xp.sqrt((xp.abs(fun) ** 2).sum())
-        else:
-            return (xp.exp(xp.log(xp.abs(fun)) + self.NormChoice * xp.sum(xp.abs(self.nu), axis=0)).reshape(self.reshape_J)).max()
+        elif self.NormChoice == 'Analytic':
+            return (xp.exp(xp.log(xp.abs(fun)) + self.NormAnalytic * xp.sum(xp.abs(self.nu), axis=0)).reshape(self.reshape_J)).max()
 
     def norm_int(self, fun):
         fun_ = fun.copy()
@@ -105,36 +101,6 @@ class RG:
         fun_ = (fun + xp.roll(xp.flip(fun, axis=self.axis_dim), 1, axis=self.axis_dim).conj()) / 2.0
         fun_[0][self.zero_] = 0.0
         return fun_
-
-    def plotf(self, fun):
-        plt.rcParams.update({'font.size': 22})
-        if self.dim == 2:
-            fig, ax = plt.subplots(1,1)
-            ax.set_xlim(-self.L, self.L)
-            ax.set_ylim(-self.L, self.L)
-            color_map = 'hot_r'
-            im = ax.imshow(xp.abs(xp.roll(fun, (self.L, self.L), axis=(0,1))).transpose(), origin='lower', extent=[-self.L, self.L, -self.L, self.L], \
-                            norm=colors.LogNorm(vmin=self.TolMin, vmax=xp.abs(fun).max()), cmap=color_map)
-            fig.colorbar(im, orientation='vertical')
-        elif self.dim == 3:
-            Y, Z = xp.meshgrid(xp.arange(-self.L, self.L+1), xp.arange(-self.L, self.L+1))
-            X = xp.zeros_like(Y)
-            fig = plt.figure()
-            ax = fig.gca(projection='3d')
-            ax.set_box_aspect((5/3, 1/3, 1/3))
-            norm_c = colors.LogNorm(vmin=self.TolMin, vmax=xp.abs(fun).max())
-            for k_ in range(-self.L, self.L+1):
-                A = xp.abs(xp.roll(fun[k_, :, :], (self.L,self.L), axis=(0,1)))
-                ax.plot_surface(X + k_, Y, Z, rstride=1, cstride=1, facecolors=cm.hot(norm_c(A)), alpha=0.4, linewidth=0.0, \
-                                shade=False)
-            ax.set_xticks((-self.L,0,self.L))
-            ax.set_yticks((-self.L,0,self.L))
-            ax.set_zticks((-self.L,0,self.L))
-            ax.set_xlim((-self.L-1/2, self.L+1/2))
-            ax.set_ylim((-self.L-1/2, self.L+1/2))
-            ax.set_zlim((-self.L-1/2, self.L+1/2))
-            ax.view_init(elev=20, azim=120)
-        plt.pause(1e-17)
 
     def converge(self, h, display=False):
         h_ = copy.deepcopy(h)
@@ -206,12 +172,14 @@ class RG:
                 y_o = omega_nu * y_
                 f_o = omega_nu * f_
                 sh_ = ao2 * f_t - self.omega_0_nu * y_ + self.conv_product(y_t, f_o) - self.conv_product(y_o, f_t)
+                sh_ *= self.MaxCT
                 k_ = 2
                 while (self.TolMax > self.norm(sh_) > self.TolLie) and (self.TolMax > self.norm(f_) > self.TolMin) and (k_ < self.MaxLie):
                     f_ += sh_
                     sh_t = xp.roll(sh_ * self.J_, -1, axis=0)
                     sh_o = omega_nu * sh_
                     sh_ = (ao2 * sh_t + self.conv_product(y_t, sh_o) - self.conv_product(y_o, sh_t)) / self.Precision(k_)
+                    sh_ *= self.MaxCT
                     k_ += 1
                 if not (self.norm(sh_) <= self.TolLie):
                     if (self.norm(sh_) >= self.TolMax):

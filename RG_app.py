@@ -1,25 +1,25 @@
-import numpy as xp
+
 import tkinter as tk
 from tkinter import ttk
+import numpy as xp
+from itertools import chain
+from functools import partial
+import multiprocessing
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+from matplotlib import cm
+import copy
 import time
 from datetime import date
-from itertools import chain
-import multiprocessing
-import RG_classes_functions as RG
-import matplotlib.pyplot as plt
-import copy
-from functools import partial
-from tqdm import tqdm, trange
 from scipy.io import savemat
-import warnings
-warnings.filterwarnings("ignore")
+import RG_classes_functions as RG
 
 color_bg = '#9BB7D4'
 font = 'Garamond 14 bold'
 font_color = '#000080'
 NumCores = multiprocessing.cpu_count()
 
-version_rgapp = '0.3'
+version_rgapp = '0.5'
 date_rgapp = time.strftime("%Y / %m / %d")
 
 def main():
@@ -35,8 +35,7 @@ def main():
 	screen_height = rg_app.winfo_screenheight()
 	position_x = (screen_width // 2) - (window_x // 2)
 	position_y = (screen_height // 2) - (window_y // 2)
-	geo = "{}x{}+{}+{}".format(window_x, window_y, position_x, position_y)
-	rg_app.geometry(geo)
+	rg_app.geometry("{}x{}+{}+{}".format(window_x, window_y, position_x, position_y))
 	rg_app.resizable(False, False)
 	rg_app.configure(bg=color_bg)
 
@@ -57,10 +56,10 @@ def main():
 	case_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
 	case_options = ('GoldenMean', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
 
-	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'MaxA'
-	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double'
-	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+9), 1e-11, 5000, 5000, 0.2
-	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (4, 2), (7, 2), (7, 0)
+	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'MaxCT', 'NormAnalytic'
+	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double', 'Double'
+	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+9), 1e-11, 5000, 5000, 1.0, 1.0
+	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (4, 2), (7, 2), (7, 0), (4, 4)
 
 	menu_rg_names = 'ChoiceIm', 'CanonicalTransformation', 'NormChoice', 'Precision'
 	menu_rg_types = 'Char', 'Char', 'Char', 'Int'
@@ -80,7 +79,7 @@ def main():
 	option_positions = (1, 0), (1, 3), (3, 3), (5, 3), (7, 3), (5, 0), (7, 0), (3, 0)
 
 	case_vars = definevar(tab_main, case_types, case_values)
-	makeform(tab_main, case_vars, case_names, case_positions, (7, 20))
+	makeforms(tab_main, case_vars, case_names, case_positions, (7, 20))
 	tk.Label(tab_main, width=20, text='Choose frequency vector:', anchor='w', bg=color_bg, pady=5, font=font, fg=font_color).grid(row=0, column=0, padx=5)
 	choice_case = tk.StringVar(tab_main, value=case_options[0])
 	tk.OptionMenu(tab_main, choice_case, *case_options, command= lambda x: define_case(x, case_vars)).grid(row=0, column=1, padx=5, sticky='w')
@@ -96,23 +95,21 @@ def main():
 	makechecks(tab_main, output_vars, output_names, output_positions)
 
 	param_rg_vars = definevar(tab_params, param_rg_types, param_rg_values)
-	makeform(tab_params, param_rg_vars, param_rg_names, param_rg_positions, (8, 5))
+	makeforms(tab_params, param_rg_vars, param_rg_names, param_rg_positions, (8, 5))
 	tk.Label(tab_params, width=10, text=None, bg=color_bg).grid(row=0, column=2)
 	menu_rg_vars = definevar(tab_params, menu_rg_types, menu_rg_values)
 	makemenus(tab_params, menu_rg_vars, menu_rg_names, menu_rg_menus, menu_rg_positions)
 
 	option_vars = definevar(tab_options, option_types, option_values)
-	makeform(tab_options, option_vars, option_names, option_positions, (14, 8))
+	makeforms(tab_options, option_vars, option_names, option_positions, (14, 8))
 	tk.Label(tab_options, width=10, text=None, bg=color_bg).grid(row=0, column=2)
 
 	parameters = [case_names + param_rg_names + menu_rg_names, case_vars + param_rg_vars + menu_rg_vars]
-
 	options = [output_names + option_names, output_vars + option_vars]
-
 	tabs = [tab_main, tab_params, tab_options, tab_about]
 
 	run_button = tk.Button(tab_main, text='Run', highlightbackground=color_bg, width=15,\
-	 	command= lambda : rg_run(run_method, parameters, options, tabs)).grid(row=8, column=3, sticky='w')
+	 	command= lambda : rgrun(run_method, parameters, options, tabs)).grid(row=8, column=3, sticky='w')
 	tk.Label(tab_main, width=10, text=None, bg=color_bg).grid(row=9, column=0)
 
 	tk.Label(tab_about, width=10, text=None, bg=color_bg).grid(row=0, column=2)
@@ -158,7 +155,7 @@ def definevar(root, types, values):
 		paramlist.append(tempvar)
 	return paramlist
 
-def makeform(root, fields, names, positions, width):
+def makeforms(root, fields, names, positions, width):
 	for (field, name, position) in zip(fields, names, positions):
 		lab = tk.Label(root, width=width[0], text=name, anchor='e', bg=color_bg, font=font, fg=font_color)
 		ent = tk.Entry(root, width=width[1], textvariable=field, bg=color_bg)
@@ -177,7 +174,7 @@ def makechecks(root, fields, names, positions):
 		chec = tk.Checkbutton(root, text=name, variable=field, onvalue=True, offvalue=False, bg=color_bg, font=font, fg=font_color)
 		chec.grid(row=position[0], column=position[1], sticky='w')
 
-def rg_run(run_method, parameters, options, tabs):
+def rgrun(run_method, parameters, options, tabs):
 	dict_param = dict()
 	for (name, var) in zip(parameters[0], parameters[1]):
 		dict_param[name] = var.get()
@@ -204,7 +201,7 @@ def define_case(case_option, params):
 	if case_option == 'GoldenMean':
 	    N = [[1, 1], [1, 0]]
 	    Eigenvalues = [-0.618033988749895, 1.618033988749895]
-	    omega_0 = (Eigenvalues[0], 1.0)
+	    omega_0 = [Eigenvalues[0], 1.0]
 	    Omega = [1.0, 0.0]
 	    K = ((0, 1, 0), (0, 1, 1))
 	    KampInf = [0.02, 0.02]
@@ -212,8 +209,8 @@ def define_case(case_option, params):
 	elif case_option == 'SpiralMean':
 	    N = [[0, 0, 1], [1, 0, 0], [0, 1, -1]]
 	    sigma = 1.3247179572447460259
-	    #Eigenvalues = [1.0 / sigma]
-	    omega_0 = (sigma**2, sigma, 1.0)
+	    Eigenvalues = [1.0 / sigma]
+	    omega_0 = [sigma**2, sigma, 1.0]
 	    Omega = [1.0, 1.0, -1.0]
 	    K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
 	    KampInf = [0.034, 0.089, 0.1]
@@ -223,8 +220,8 @@ def define_case(case_option, params):
 	    Tau = 0.445041867912629
 	    Tau2 = 1.801937735804839
 	    Tau3 = -1.246979603717467
-	    #Eigenvalues = [Tau, Tau2, Tau3]
-	    omega_0 = (1.0, Tau, 1.0 - Tau - Tau**2)
+	    Eigenvalues = [Tau, Tau2, Tau3]
+	    omega_0 = [1.0, Tau, 1.0 - Tau - Tau**2]
 	    Omega = [1.0, 1.0, -1.0]
 	    K = ((0, 0, -1, 1), (0, 1, -1, -1), (0, 0, 0, 1))
 	    KampInf = [0.0, 0.0, 0.0]
@@ -232,8 +229,8 @@ def define_case(case_option, params):
 	elif case_option == 'OMean':
 	    N = [[0, 0, 1], [1, 0, -1], [0, 1, 0]]
 	    o_val = 0.682327803828019
-	    #Eigenvalues = [o_val]
-	    omega_0 = (1.0, o_val, o_val**2)
+	    Eigenvalues = [o_val]
+	    omega_0 = [1.0, o_val, o_val**2]
 	    Omega = [1.0, 1.0, 1.0]
 	    K = ((0, 1, -1, -1), (0, 0, 1, -1), (0, 1, -1, 0))
 	    KampInf = [0.0, 0.0, 0.0]
@@ -244,7 +241,7 @@ def define_case(case_option, params):
 	    Eta2 = -1.532088886237956
 	    Eta3 = 1.879385241571816
 	    Eigenvalues = [Eta, Eta2, Eta3]
-	    omega_0 = (Eta **2 - Eta - 1.0, Eta, 1.0)
+	    omega_0 = [Eta **2 - Eta - 1.0, Eta, 1.0]
 	    Omega = [1.0, -1.0, 1.0]
 	    K = ((0, 1, 1, 1), (0, -1, 1, 0), (0, 0, 1, 0))
 	    KampInf = [0.0, 0.0, 0.0]
@@ -260,46 +257,42 @@ def iterates(case, tabs):
 	h_inf, h_sup = case.generate_2Hamiltonians()
 	if (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
 		timestr = time.strftime("%Y%m%d_%H%M")
-		if case.PlotResults:
-			case.plotf(h_sup.f[0])
-		start = time.time()
+		plotf(h_sup.f[0], case)
 		data = []
 		progress = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=case.NumberOfIterations, mode='indeterminate')
 		progress.grid(row=10, column=0, columnspan=4, sticky='s')
 		progress['value'] = 0
+		text_output = tk.Test(tabs[0], height=5, width=100)
+		text_output.grid(row=11, column=0, columnspan=4, sticky='w')
+		scroll_bar = tk.Scrollbar(tabs[0])
+		text_output.config(yscrollcommand=scroll_bar.set)
+		scroll_bar.config(command=text_output.yview)
+		scroll_bar.grid(row=11, column=4, sticky='NSW')
 		k_ = 0
 		while (k_ < case.NumberOfIterations) and (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
 			k_ += 1
-			start_k = time.time()
+			start = time.time()
 			h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.DistSurf, strict=True)
 			h_inf_ = case.renormalization_group(h_inf)
 			h_sup_ = case.renormalization_group(h_sup)
 			if k_ == 1:
-				print('Critical parameter = {}'.format(2.0 * h_inf.f[case.K[0]]))
-			if case.PlotResults:
-				case.plotf(h_inf_.f[0])
+				text_output.insert(tk.END, 'Critical parameter = {} \n'.format(2.0 * h_inf.f[case.K[0]]))
+			plotf(h_inf_.f[0], case)
 			mean2_p = 2.0 * h_inf.f[2][case.zero_]
 			diff_p = case.norm(xp.abs(h_inf.f) - xp.abs(h_inf_.f))
 			delta_p = case.norm(xp.abs(h_inf_.f) - xp.abs(h_sup_.f)) / case.norm(h_inf.f - h_sup.f)
 			data.append([diff_p, delta_p, mean2_p])
 			h_inf = copy.deepcopy(h_inf_)
 			h_sup = copy.deepcopy(h_sup_)
-			end_k = time.time()
-			print("diff = %.3e    delta = %.7f   <f2> = %.7f    (done in %d seconds)" % \
-					(diff_p, delta_p, mean2_p, int(xp.rint(end_k-start_k))))
+			text_output.insert(tk.END, 'diff = %.3e    delta = %.7f   <f2> = %.7f    (done in %d seconds)\n' % \
+					(diff_p, delta_p, mean2_p, int(xp.rint(time.time()-start))))
 			progress['value'] += 1
 			progress.update()
-			if case.SaveData:
-				info = 'diff     delta     <f2>'
-				save_data('RG_iterates', data, timestr, case, info=info)
-		progress.destroy()
-		if (k_ < case.NumberOfIterations):
-			print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
-		end = time.time()
-		print("Computation done in {} seconds".format(int(xp.rint(end-start))))
+			save_data('RG_iterates', data, timestr, case, info='diff     delta     <f2>')
 		plt.show()
-	else:
-		print('Warning (iterates): ' + h_inf.error + ' / ' + h_sup.error)
+		progress.destroy()
+		text_output.destroy()
+		scroll_bar.destroy()
 
 def compute_cr(epsilon, case):
 	k_inf_ = case.KampInf.copy()
@@ -331,8 +324,7 @@ def critical_surface(case, tabs):
 		data.append(result)
 	progress.destroy()
 	data = xp.array(data).transpose()
-	if case.SaveData:
-		save_data('RG_critical_surface', data, timestr, case)
+	save_data('RG_critical_surface', data, timestr, case)
 	if case.PlotResults:
 		fig = plt.figure()
 		ax = fig.gca()
@@ -369,14 +361,12 @@ def converge_region(case, tabs):
 			info.append(result_info)
 			progress2['value'] += 1
 			progress2.update()
+		save_data('RG_converge_region', data, timestr, case)
 		progress2.destroy()
-		if case.SaveData:
-			save_data('RG_converge_region', data, timestr, case)
 		progress1['value'] += 1
 		progress1.update()
 	progress1.destroy()
-	if case.SaveData:
-		save_data('RG_converge_region', xp.array(data).reshape((case.Ncs, case.Ncs, 2)), timestr, case, info=xp.array(info).reshape((case.Ncs, case.Ncs, 2)))
+	save_data('RG_converge_region', xp.array(data).reshape((case.Ncs, case.Ncs, 2)), timestr, case, info=xp.array(info).reshape((case.Ncs, case.Ncs, 2)))
 	if case.PlotResults:
 		fig = plt.figure()
 		ax = fig.gca()
@@ -391,14 +381,12 @@ def approach_set(k, set1, set2, case, dist, strict):
 	set1[k], set2[k] = case.approach(set1[k], set2[k], dist=dist, strict=strict)
 
 def iterate_circle(case, tabs):
-	start = time.time()
 	h_inf, h_sup = case.generate_2Hamiltonians()
 	h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.DistSurf, strict=True)
 	h_inf = case.renormalization_group(h_inf)
 	h_sup = case.renormalization_group(h_sup)
 	h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.DistCircle, strict=True)
 	if (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
-		print('starting circle')
 		timestr = time.strftime("%Y%m%d_%H%M")
 		hc_inf, hc_sup = case.approach(h_inf, h_sup, dist=case.DistSurf, strict=True)
 		v1 = xp.zeros((case.J+1,) + case.dim * (2*case.L+1,), dtype=case.Precision)
@@ -430,8 +418,7 @@ def iterate_circle(case, tabs):
 		for i_ in trange(case.NumberOfIterations):
 			for k_ in range(case.Nh+1):
 				Coord[k_, :, i_] = [xp.vdot(circle_inf[k_].f - hc_inf.f, v1), xp.vdot(circle_inf[k_].f - hc_inf.f, v2)]
-			if case.SaveData:
-				save_data('RG_circle', Coord / case.Radius ** 2, timestr, case)
+			save_data('RG_circle', Coord / case.Radius ** 2, timestr, case)
 			if case.PlotResults:
 				fig = plt.figure()
 				ax = fig.add_subplot(111)
@@ -448,22 +435,49 @@ def iterate_circle(case, tabs):
 			hc_inf, hc_sup = case.approach(hc_inf, hc_sup, dist=case.DistSurf, strict=True)
 			progress['value'] += 1
 			progress.update()
-		progress.destroy()
-		end = time.time()
-		print("Computation done in {} seconds".format(int(xp.rint(end-start))))
 		plt.show()
-	else:
-		print('Warning (iterate_circle): ' + h_inf.error + ' / ' + h_sup.error)
+		progress.destroy()
 
 def save_data(name, data, timestr, case, info=[]):
-    mdic = case.DictParams.copy()
-    mdic.update({'data': data})
-    mdic.update({'info': info})
-    today = date.today()
-    date_today = today.strftime(" %B %d, %Y\n")
-    email = ' cristel.chandre@univ-amu.fr'
-    mdic.update({'date': date_today, 'author': email})
-    savemat(name + '_' + timestr + '.mat', mdic)
+	if case.SaveData:
+		mdic = case.DictParams.copy()
+	    mdic.update({'data': data})
+	    mdic.update({'info': info})
+	    today = date.today()
+	    date_today = today.strftime(" %B %d, %Y\n")
+	    email = ' cristel.chandre@univ-amu.fr'
+	    mdic.update({'date': date_today, 'author': email})
+    	savemat(name + '_' + timestr + '.mat', mdic)
+
+def plotf(fun, case):
+	plt.rcParams.update({'font.size': 22})
+	if case.dim == 2 and case.PlotResults:
+		fig, ax = plt.subplots(1,1)
+		ax.set_xlim(-case.L, case.L)
+		ax.set_ylim(-case.L, case.L)
+		color_map = 'hot_r'
+		im = ax.imshow(xp.abs(xp.roll(fun, (case.L, case.L), axis=(0,1))).transpose(), origin='lower', extent=[-case.L, case.L, -case.L, case.L], \
+						norm=colors.LogNorm(vmin=case.TolMin, vmax=xp.abs(fun).max()), cmap=color_map)
+		fig.colorbar(im, orientation='vertical')
+	elif case.dim == 3 and case.PlotResults:
+		Y, Z = xp.meshgrid(xp.arange(-case.L, case.L+1), xp.arange(-case.L, case.L+1))
+		X = xp.zeros_like(Y)
+		fig = plt.figure()
+		ax = fig.gca(projection='3d')
+		ax.set_box_aspect((5/3, 1/3, 1/3))
+		norm_c = colors.LogNorm(vmin=case.TolMin, vmax=xp.abs(fun).max())
+		for k_ in range(-case.L, case.L+1):
+			A = xp.abs(xp.roll(fun[k_, :, :], (case.L,case.L), axis=(0,1)))
+			ax.plot_surface(X + k_, Y, Z, rstride=1, cstride=1, facecolors=cm.hot(norm_c(A)), alpha=0.4, linewidth=0.0, \
+							shade=False)
+		ax.set_xticks((-case.L,0,case.L))
+		ax.set_yticks((-case.L,0,case.L))
+		ax.set_zticks((-case.L,0,case.L))
+		ax.set_xlim((-case.L-1/2, case.L+1/2))
+		ax.set_ylim((-case.L-1/2, case.L+1/2))
+		ax.set_zlim((-case.L-1/2, case.L+1/2))
+		ax.view_init(elev=20, azim=120)
+	plt.pause(1e-17)
 
 if __name__ == "__main__":
 	main()
