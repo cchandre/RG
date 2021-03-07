@@ -1,6 +1,7 @@
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter import scrolledtext
 import numpy as xp
 from itertools import chain
 from functools import partial
@@ -30,7 +31,7 @@ def main():
 	style.configure('.', foreground=font_color)
 	rg_app.title("Renormalization Group for Hamiltonians")
 	window_x = 680
-	window_y = 400
+	window_y = 450
 	screen_width = rg_app.winfo_screenwidth()
 	screen_height = rg_app.winfo_screenheight()
 	position_x = (screen_width // 2) - (window_x // 2)
@@ -59,7 +60,7 @@ def main():
 	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'MaxCT', 'NormAnalytic'
 	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double', 'Double'
 	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+9), 1e-11, 5000, 5000, 1.0, 1.0
-	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (4, 2), (7, 2), (7, 0), (4, 4)
+	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (4, 2), (7, 2), (7, 0), (8, 2)
 
 	menu_rg_names = 'ChoiceIm', 'CanonicalTransformation', 'NormChoice', 'Precision'
 	menu_rg_types = 'Char', 'Char', 'Char', 'Int'
@@ -95,10 +96,10 @@ def main():
 	makechecks(tab_main, output_vars, output_names, output_positions)
 
 	param_rg_vars = definevar(tab_params, param_rg_types, param_rg_values)
-	makeforms(tab_params, param_rg_vars, param_rg_names, param_rg_positions, (8, 5))
+	makeforms(tab_params, param_rg_vars, param_rg_names, param_rg_positions, (12, 5))
 	tk.Label(tab_params, width=10, text=None, bg=color_bg).grid(row=0, column=2)
 	menu_rg_vars = definevar(tab_params, menu_rg_types, menu_rg_values)
-	makemenus(tab_params, menu_rg_vars, menu_rg_names, menu_rg_menus, menu_rg_positions)
+	makemenus(tab_params, menu_rg_vars, menu_rg_names, menu_rg_menus, menu_rg_positions, 25)
 
 	option_vars = definevar(tab_options, option_types, option_values)
 	makeforms(tab_options, option_vars, option_names, option_positions, (14, 8))
@@ -162,9 +163,9 @@ def makeforms(root, fields, names, positions, width):
 		lab.grid(row=position[0], column=position[1], pady=5)
 		ent.grid(row=position[0], column=position[1]+1)
 
-def makemenus(root, fields, names, menus, positions):
+def makemenus(root, fields, names, menus, positions, width):
 	for (field, name, menu, position) in zip(fields, names, menus, positions):
-		lab = tk.Label(root, width=18, text=name, anchor='e', bg=color_bg, font=font, fg=font_color)
+		lab = tk.Label(root, width=width, text=name, anchor='e', bg=color_bg, font=font, fg=font_color)
 		men = tk.OptionMenu(root, field, * menu)
 		lab.grid(row=position[0], column=position[1], pady=5, sticky='e')
 		men.grid(row=position[0]+1, column=position[1], pady=5, sticky='e')
@@ -262,12 +263,8 @@ def iterates(case, tabs):
 		progress = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=case.NumberOfIterations, mode='indeterminate')
 		progress.grid(row=10, column=0, columnspan=4, sticky='s')
 		progress['value'] = 0
-		text_output = tk.Test(tabs[0], height=5, width=100)
-		text_output.grid(row=11, column=0, columnspan=4, sticky='w')
-		scroll_bar = tk.Scrollbar(tabs[0])
-		text_output.config(yscrollcommand=scroll_bar.set)
-		scroll_bar.config(command=text_output.yview)
-		scroll_bar.grid(row=11, column=4, sticky='NSW')
+		text_output = scrolledtext.ScrolledText(tabs[0], wrap = tk.WORD, width = 80, height = 6)
+		text_output.grid(row=11, column=0, columnspan=4)
 		k_ = 0
 		while (k_ < case.NumberOfIterations) and (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
 			k_ += 1
@@ -276,7 +273,7 @@ def iterates(case, tabs):
 			h_inf_ = case.renormalization_group(h_inf)
 			h_sup_ = case.renormalization_group(h_sup)
 			if k_ == 1:
-				text_output.insert(tk.END, 'Critical parameter = {} \n'.format(2.0 * h_inf.f[case.K[0]]))
+				text_output.insert(tk.END, 'Critical parameter = {}'.format(2.0 * h_inf.f[case.K[0]]))
 			plotf(h_inf_.f[0], case)
 			mean2_p = 2.0 * h_inf.f[2][case.zero_]
 			diff_p = case.norm(xp.abs(h_inf.f) - xp.abs(h_inf_.f))
@@ -284,15 +281,14 @@ def iterates(case, tabs):
 			data.append([diff_p, delta_p, mean2_p])
 			h_inf = copy.deepcopy(h_inf_)
 			h_sup = copy.deepcopy(h_sup_)
-			text_output.insert(tk.END, 'diff = %.3e    delta = %.7f   <f2> = %.7f    (done in %d seconds)\n' % \
+			text_output.insert(tk.END, '\n diff = %.3e    delta = %.7f   <f2> = %.7f    (done in %d seconds)' % \
 					(diff_p, delta_p, mean2_p, int(xp.rint(time.time()-start))))
+			text_output.yview_moveto(1)
 			progress['value'] += 1
 			progress.update()
 			save_data('RG_iterates', data, timestr, case, info='diff     delta     <f2>')
 		plt.show()
 		progress.destroy()
-		text_output.destroy()
-		scroll_bar.destroy()
 
 def compute_cr(epsilon, case):
 	k_inf_ = case.KampInf.copy()
@@ -441,13 +437,13 @@ def iterate_circle(case, tabs):
 def save_data(name, data, timestr, case, info=[]):
 	if case.SaveData:
 		mdic = case.DictParams.copy()
-	    mdic.update({'data': data})
-	    mdic.update({'info': info})
-	    today = date.today()
-	    date_today = today.strftime(" %B %d, %Y\n")
-	    email = ' cristel.chandre@univ-amu.fr'
-	    mdic.update({'date': date_today, 'author': email})
-    	savemat(name + '_' + timestr + '.mat', mdic)
+		mdic.update({'data': data})
+		mdic.update({'info': info})
+		today = date.today()
+		date_today = today.strftime(" %B %d, %Y\n")
+		email = ' cristel.chandre@univ-amu.fr'
+		mdic.update({'date': date_today, 'author': email})
+		savemat(name + '_' + timestr + '.mat', mdic)
 
 def plotf(fun, case):
 	plt.rcParams.update({'font.size': 22})
