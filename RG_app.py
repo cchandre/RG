@@ -263,7 +263,7 @@ def iterates(case, tabs):
 		progress = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=case.NumberOfIterations, mode='indeterminate')
 		progress.grid(row=10, column=0, columnspan=4, sticky='s')
 		progress['value'] = 0
-		text_output = scrolledtext.ScrolledText(tabs[0], wrap = tk.WORD, width = 80, height = 6)
+		text_output = scrolledtext.ScrolledText(tabs[0], wrap = tk.WORD, width = 85, height = 6)
 		text_output.grid(row=11, column=0, columnspan=4)
 		k_ = 0
 		while (k_ < case.NumberOfIterations) and (h_inf.error == [0, 0]) and (h_sup.error == [0, 0]):
