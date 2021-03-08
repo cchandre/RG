@@ -69,7 +69,7 @@ class RG:
             self.oa_mat = xp.vander(self.oa_vec, increasing=True).transpose()
             indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),) + self.dim * (xp.arange(0, 2*self.L+1),)
             nu_nu = xp.meshgrid(*indx, indexing='ij')
-            nu_phi = (2.0 * xp.pi * sum(nu_nu[k] * nu_nu[k+self.dim] for k in range(self.dim)) / self.Precision_(2*self.L+1)).reshape(self.reshape_cs)
+            nu_phi = (2.0 * xp.pi * sum(nu_nu[k] * nu_nu[k+self.dim] for k in range(self.dim)) / self.Precision(2*self.L+1)).reshape(self.reshape_cs)
             self.exp_nu = xp.exp(1j * nu_phi)
             self.r3_av = (1,) + (self.J+1,) + self.dim * (1,)
             self.r3_oy = (1,) + (self.J+1,) + self.dim * (2*self.L+1,)
@@ -189,7 +189,7 @@ class RG:
             elif self.CanonicalTransformation == 'Type2':
                 dy_doa = xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(xp.roll(1j * y_ * self.J_, -1, axis=0), axes=self.axis_dim) * (2*self.L+1)**self.dim)
                 ody_dphi = - xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(omega_nu.reshape(self.reshape_J) * y_, axes=self.axis_dim) * (2*self.L+1)**self.dim)
-                o0dy_dphi = - xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(freq.omega_0_nu.reshape(self.reshape_J) * y_, axes=self.axis_dim) * (2*self.L+1)**self.dim)
+                o0dy_dphi = - xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(self.omega_0_nu.reshape(self.reshape_J) * y_, axes=self.axis_dim) * (2*self.L+1)**self.dim)
                 exp_nu_mod = self.exp_nu * xp.exp(1j * omega_nu.reshape(self.reshape_Je) * dy_doa)
                 coeff_f = xp.moveaxis(self.oa_mat.reshape(self.reshape_oa) * exp_nu_mod, range(self.dim+1), range(-self.dim-1, 0))
                 oa_p = xp.power((self.oa_vec + ao2).reshape(self.r3_av) + ody_dphi.reshape(self.r3_oy), self.J_.reshape(self.r3_j))
