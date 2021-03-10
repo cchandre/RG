@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from tkinter import ttk
 from tkinter import scrolledtext
@@ -226,7 +225,7 @@ def define_case(case_option, params):
 	    Omega = [1.0, 1.0, -1.0]
 	    K = ((0, 0, -1, 1), (0, 1, -1, -1), (0, 0, 0, 1))
 	    KampInf = [0.0, 0.0, 0.0]
-	    KampSup = [0.1, 0.1, 0.1]
+	    KampSup = [0.001, 0.007, 0.01]
 	elif case_option == 'OMean':
 	    N = [[0, 0, 1], [1, 0, -1], [0, 1, 0]]
 	    o_val = 0.682327803828019

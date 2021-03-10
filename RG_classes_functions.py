@@ -38,7 +38,7 @@ class RG:
         N_nu = xp.sign(self.Eigenvalue).astype(int) * xp.einsum('ij,j...->i...', self.N, self.nu)
         self.omega_0_nu = xp.einsum('i,i...->...', self.omega_0, self.nu).reshape(self.reshape_J)
         mask = xp.prod(abs(N_nu) <= self.L, axis=0, dtype=bool)
-        norm_nu = LA.norm(self.nu, axis=0).reshape(self.reshape_J)
+        norm_nu = self.Precision(LA.norm(self.nu, axis=0)).reshape(self.reshape_J)
         self.J_ = xp.arange(self.J+1, dtype=self.Precision).reshape(self.reshape_L)
         if self.ChoiceIm == 'AKP1998':
             comp_im = self.Sigma * xp.repeat(norm_nu, self.J+1, axis=0) + self.Kappa * self.J_
@@ -102,15 +102,13 @@ class RG:
         fun_[0][self.zero_] = 0.0
         return fun_
 
-    def converge(self, h, display=False):
+    def converge(self, h):
         h_ = copy.deepcopy(h)
         h_.error = [0, 0]
         it_conv = 0
         while (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (h_.error == [0, 0]):
             h_ = self.renormalization_group(h_)
             it_conv += 1
-            if display:
-                print("|H_{}| = {:4e}".format(it_conv, self.norm_int(h_.f)))
         if (self.norm_int(h_.f) <= self.TolMin) and (h_.error == [0, 0]):
             return True
         elif (self.norm_int(h_.f) >= self.TolMax) and (h_.error == [0, 0]):
@@ -136,10 +134,7 @@ class RG:
             delta_ = dist / self.norm(h_inf_.f - h_sup_.f)
             h_sup_.f = h_mid_.f + delta_ * (h_sup_.f - h_mid_.f)
             h_inf_.f = h_mid_.f + delta_ * (h_inf_.f - h_mid_.f)
-        if not self.converge(h_inf_):
-            print('Warning (approach): ' + h_inf_.error)
         if self.converge(h_sup_):
-            print('Warning (approach): h_sup not above crit. surf.')
             h_sup_.error = [3, 0]
         else:
             h_sup_.error = [0, 0]
