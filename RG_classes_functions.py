@@ -162,19 +162,19 @@ class RG:
                 y_[m][self.iminus[m]] = (f_[m][self.iminus[m]] - 2.0 * f_[2][self.zero_] * omega_nu[0][self.iminus[m]] * y_[m-1][self.iminus[m]])\
                                     / self.omega_0_nu[0][self.iminus[m]]
             if self.CanonicalTransformation == 'Lie':
+                if self.norm(iminus_f) >= self.ThresholdCT:
+                    y_ *= self.MaxCT
                 y_t = xp.roll(y_ * self.J_, -1, axis=0)
                 f_t = xp.roll(f_ * self.J_, -1, axis=0)
                 y_o = omega_nu * y_
                 f_o = omega_nu * f_
                 sh_ = ao2 * f_t - self.omega_0_nu * y_ + self.conv_product(y_t, f_o) - self.conv_product(y_o, f_t)
-                sh_ *= self.MaxCT
                 k_ = 2
                 while (self.TolMax > self.norm(sh_) > self.TolLie) and (self.TolMax > self.norm(f_) > self.TolMin) and (k_ < self.MaxLie):
                     f_ += sh_
                     sh_t = xp.roll(sh_ * self.J_, -1, axis=0)
                     sh_o = omega_nu * sh_
                     sh_ = (ao2 * sh_t + self.conv_product(y_t, sh_o) - self.conv_product(y_o, sh_t)) / self.Precision(k_)
-                    sh_ *= self.MaxCT
                     k_ += 1
                 if not (self.norm(sh_) <= self.TolLie):
                     if (self.norm(sh_) >= self.TolMax):
