@@ -162,7 +162,7 @@ class RG:
                 y_[m][self.iminus[m]] = (f_[m][self.iminus[m]] - 2.0 * f_[2][self.zero_] * omega_nu[0][self.iminus[m]] * y_[m-1][self.iminus[m]])\
                                     / self.omega_0_nu[0][self.iminus[m]]
             if self.CanonicalTransformation == 'Lie':
-                if self.norm(iminus_f) >= self.ThresholdCT:
+                if self.norm(y_) >= self.ThresholdCT:
                     y_ *= self.MaxCT
                 y_t = xp.roll(y_ * self.J_, -1, axis=0)
                 f_t = xp.roll(f_ * self.J_, -1, axis=0)
@@ -197,7 +197,7 @@ class RG:
                 y_t = xp.sum(xp.roll(y_ * self.J_, -1, axis=0).reshape(self.reshape_t) * self.oa_mat.reshape(self.reshape_oa) * self.exp_nu, axis=self.sum_dim)
                 y_e = y_.reshape(self.reshape_t) * self.oa_mat.reshape(self.reshape_oa) * self.exp_nu
                 coeff_f = xp.moveaxis(xp.power(self.oa_vec.reshape(self.reshape_av) - ao2 + xp.sum(omega_nu_e * y_e, axis=self.sum_dim), self.Je_) * self.exp_nu, range(self.dim+1), range(-self.dim-1, 0))
-                coeff_g = xp.sum(f_e * self.oa_mat.reshape(self.reshape_oa) * self.exp_nu * xp.exp(omega_nu_e * y_t) - omega_0_nu_e * y_e, axis=self.sum_dim)
+                coeff_g = xp.sum(f_e * self.oa_mat.reshape(self.reshape_oa) * self.exp_nu * xp.exp(omega_nu_e * y_t) - self.omega_0_nu_e * y_e, axis=self.sum_dim)
                 f_ = xp.real(LA.tensorsolve(coeff_f, coeff_g))
             iminus_f[self.iminus] = f_[self.iminus]
             km_ += 1
