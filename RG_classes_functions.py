@@ -164,25 +164,29 @@ class RG:
                 y_[m][self.iminus[m]] = (f_[m][self.iminus[m]] - 2.0 * f_[2][self.zero_] * omega_nu[0][self.iminus[m]] * y_[m-1][self.iminus[m]])\
                                     / self.omega_0_nu[0][self.iminus[m]]
             if self.CanonicalTransformation == 'Lie':
-                if self.norm(y_) >= self.ThresholdCT:
-                    y_ *= self.MaxCT
+                n_lie = 1
+                if self.norm(iminus_f) >= self.ThresholdCT:
+                    y_ /= self.Precision(self.n_lie)
+                    ao2 /= self.Precision(self.n_lie)
+                    n_lie = self.n_lie
                 y_t = xp.roll(y_ * self.J_, -1, axis=0)
-                f_t = xp.roll(f_ * self.J_, -1, axis=0)
                 y_o = omega_nu * y_
-                f_o = omega_nu * f_
-                sh_ = ao2 * f_t - self.omega_0_nu * y_ + self.conv_product(y_t, f_o) - self.conv_product(y_o, f_t)
-                k_ = 2
-                while (self.TolMax > self.norm(sh_) > self.TolLie) and (self.TolMax > self.norm(f_) > self.TolMin) and (k_ < self.MaxLie):
-                    f_ += sh_
-                    sh_t = xp.roll(sh_ * self.J_, -1, axis=0)
-                    sh_o = omega_nu * sh_
-                    sh_ = (ao2 * sh_t + self.conv_product(y_t, sh_o) - self.conv_product(y_o, sh_t)) / self.Precision(k_)
-                    k_ += 1
-                if not (self.norm(sh_) <= self.TolLie):
-                    if (self.norm(sh_) >= self.TolMax):
-                        h_.error = [1, km_]
-                    elif (k_ >= self.MaxLie):
-                        h_.error = [-1, km_]
+                for _ in itertools.repeat(None, n_lie):
+                    f_t = xp.roll(f_ * self.J_, -1, axis=0)
+                    f_o = omega_nu * f_
+                    sh_ = ao2 * f_t - self.omega_0_nu * y_ + self.conv_product(y_t, f_o) - self.conv_product(y_o, f_t)
+                    k_ = 2
+                    while (self.TolMax > self.norm(sh_) > self.TolLie) and (k_ < self.MaxLie):
+                        f_ += sh_
+                        sh_t = xp.roll(sh_ * self.J_, -1, axis=0)
+                        sh_o = omega_nu * sh_
+                        sh_ = (ao2 * sh_t + self.conv_product(y_t, sh_o) - self.conv_product(y_o, sh_t)) / self.Precision(k_)
+                        k_ += 1
+                    if (not (self.norm(sh_) <= self.TolLie)) and (h_.error == [0, 0]):
+                        if (self.norm(sh_) >= self.TolMax):
+                            h_.error = [1, km_]
+                        elif (k_ >= self.MaxLie):
+                            h_.error = [-1, km_]
             elif self.CanonicalTransformation == 'Type2':
                 dy_doa = 1j * xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(xp.roll(y_ * self.J_, -1, axis=0), axes=self.axis_dim) * (2*self.L+1)**self.dim)
                 ody_dphi = - xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(omega_nu * y_, axes=self.axis_dim) * (2*self.L+1)**self.dim)
