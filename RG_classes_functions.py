@@ -28,25 +28,25 @@ class RG:
         self.L_ = self.dim * (self.L,)
         self.nL_ = self.dim * (-self.L,)
         self.axis_dim = tuple(range(1, self.dim+1))
-        self.reshape_J = (1,) + self.dim * (2*self.L+1,)
-        self.reshape_L = (self.J+1,) + self.dim * (1,)
+        self.r_1lxx = (1,) + self.dim * (2*self.L+1,)
+        self.r_j1xx = (self.J+1,) + self.dim * (1,)
         self.conv_dim = xp.index_exp[:self.J+1] + self.dim * xp.index_exp[self.L:3*self.L+1]
         indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),)
         self.nu = xp.meshgrid(*indx, indexing='ij')
         eigenval, w_eig = LA.eig(self.N.transpose())
         self.Eigenvalue = xp.real(eigenval[xp.abs(eigenval) < 1])
         N_nu = xp.sign(self.Eigenvalue).astype(int) * xp.einsum('ij,j...->i...', self.N, self.nu)
-        self.omega_0_nu = xp.einsum('i,i...->...', self.omega_0, self.nu).reshape(self.reshape_J)
+        self.omega_0_nu = xp.einsum('i,i...->...', self.omega_0, self.nu).reshape(self.r_1lxx)
         mask = xp.prod(abs(N_nu) <= self.L, axis=0, dtype=bool)
-        norm_nu = self.Precision(LA.norm(self.nu, axis=0)).reshape(self.reshape_J)
-        self.J_ = xp.arange(self.J+1, dtype=self.Precision).reshape(self.reshape_L)
+        norm_nu = self.Precision(LA.norm(self.nu, axis=0)).reshape(self.r_1lxx)
+        self.J_ = xp.arange(self.J+1, dtype=self.Precision).reshape(self.r_j1xx)
         if self.ChoiceIm == 'AKP1998':
             comp_im = self.Sigma * xp.repeat(norm_nu, self.J+1, axis=0) + self.Kappa * self.J_
         elif self.ChoiceIm =='K1999':
             comp_im = xp.maximum(self.Sigma * xp.repeat(norm_nu, self.J+1, axis=0), self.Kappa * self.J_)
         else:
             w_nu = xp.einsum('ij,j...->i...', w_eig, self.nu)
-            norm_w_nu = LA.norm(w_nu, axis=0).reshape(self.reshape_J)
+            norm_w_nu = LA.norm(w_nu, axis=0).reshape(self.r_1lxx)
             comp_im = self.Sigma * xp.repeat(norm_w_nu, self.J+1, axis=0) + self.Kappa * self.J_
         omega_0_nu_ = xp.repeat(xp.abs(self.omega_0_nu), self.J+1, axis=0) / xp.sqrt((self.omega_0 ** 2).sum())
         self.iminus = omega_0_nu_ > comp_im
@@ -56,25 +56,27 @@ class RG:
             self.nu_mask += (self.nu[it][mask],)
             self.N_nu_mask += (N_nu[it][mask],)
         if self.CanonicalTransformation in ['Type2', 'Type3']:
-            self.reshape_Je = (1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
-            self.reshape_oa = (self.J+1,) + self.dim * (1,) + (self.J+1,) + self.dim * (1,)
-            self.reshape_cs = (1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (2*self.L+1,)
-            self.reshape_t = (self.J+1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
-            self.reshape_av = (1,) + self.dim * (1,) + (self.J+1,) + self.dim * (1,)
+            self.r_x1jl = self.dim * (1,) + (self.J+1,) + self.dim * (2*self.L+1,)
+            self.r_xl11 = self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
+            self.r_xl1l = self.dim * (2*self.L+1,) + (1,) + self.dim * (2*self.L+1,)
+            self.r_1xj1 = (1,) + (self.J+1,) + self.dim * (1,)
+            self.r_1xjl = (1,) + (self.J+1,) + self.dim * (2*self.L+1,)
+            self.r_jx11 = (self.J+1,) + (1,) + self.dim * (1,)
+            self.r_jx1l = (self.J+1,) + (1,) + self.dim * (2*self.L+1,)
+            self.r_11j1 = (1,) + self.dim * (1,) + (self.J+1,) + self.dim * (1,)
+            self.r_1l11 = (1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
+            self.r_1l1l = (1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (2*self.L+1,)
+            self.r_1ljl = (1,) + self.dim * (2*self.L+1,) + (self.J+1,) + self.dim * (2*self.L+1,)
+            self.r_j111 = (self.J+1,) + self.dim * (1,) + (1,) + self.dim * (1,)
+            self.r_j1j1 = (self.J+1,) + self.dim * (1,) + (self.J+1,) + self.dim * (1,)
+            self.r_jl11 = (self.J+1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
             self.sum_dim = tuple(range(self.dim+1))
-            reshape_Le = (self.J+1,) + self.dim * (1,) + (1,) + self.dim * (1,)
-            self.Je_ = xp.arange(self.J+1, dtype=self.Precision).reshape(reshape_Le)
-            self.omega_0_nu_e = self.omega_0_nu.reshape(self.reshape_Je)
             self.oa_vec = 2.0 * self.MaxCT * xp.random.rand(self.J+1) - self.MaxCT
             self.oa_mat = xp.vander(self.oa_vec, increasing=True).transpose()
             indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),) + self.dim * (xp.arange(0, 2*self.L+1),)
             nu_nu = xp.meshgrid(*indx, indexing='ij')
-            nu_phi = (2.0 * xp.pi * sum(nu_nu[k] * nu_nu[k+self.dim] for k in range(self.dim)) / self.Precision(2*self.L+1)).reshape(self.reshape_cs)
+            nu_phi = (2.0 * xp.pi * sum(nu_nu[k] * nu_nu[k+self.dim] for k in range(self.dim)) / self.Precision(2*self.L+1))
             self.exp_nu = xp.exp(1j * nu_phi)
-            self.r3_av = (1,) + (self.J+1,) + self.dim * (1,)
-            self.r3_oy = (1,) + (self.J+1,) + self.dim * (2*self.L+1,)
-            self.r3_j = (self.J+1,) + (1,) + self.dim * (1,)
-            self.r3_h = (self.J+1,) + (1,) + self.dim * (2*self.L+1,)
 
     def norm(self, fun):
         if self.NormChoice == 'max':
@@ -84,7 +86,7 @@ class RG:
         elif self.NormChoice == 'Euclidian':
             return xp.sqrt((xp.abs(fun) ** 2).sum())
         elif self.NormChoice == 'Analytic':
-            return (xp.exp(xp.log(xp.abs(fun)) + self.NormAnalytic * xp.sum(xp.abs(self.nu), axis=0)).reshape(self.reshape_J)).max()
+            return xp.exp(xp.log(xp.abs(fun)) + self.NormAnalytic * xp.sum(xp.abs(self.nu), axis=0).reshape(self.r_1lxx)).max()
 
     def norm_int(self, fun):
         fun_ = fun.copy()
@@ -149,8 +151,8 @@ class RG:
         h_.Omega = omega_ / xp.sqrt((omega_ ** 2).sum())
         f_ = xp.zeros_like(h_.f)
         f_[self.nu_mask] = h_.f[self.N_nu_mask]
-        f_ *= ren.reshape(self.reshape_L)
-        omega_nu = xp.einsum('i,i...->...', h_.Omega, self.nu).reshape(self.reshape_J)
+        f_ *= ren.reshape(self.r_j1xx)
+        omega_nu = xp.einsum('i,i...->...', h_.Omega, self.nu).reshape(self.r_1lxx)
         km_ = 0
         iminus_f = xp.zeros_like(f_)
         iminus_f[self.iminus] = f_[self.iminus]
@@ -182,22 +184,22 @@ class RG:
                     elif (k_ >= self.MaxLie):
                         h_.error = [-1, km_]
             elif self.CanonicalTransformation == 'Type2':
-                dy_doa = xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(xp.roll(1j * y_ * self.J_, -1, axis=0), axes=self.axis_dim) * (2*self.L+1)**self.dim)
-                ody_dphi = - xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(omega_nu.reshape(self.reshape_J) * y_, axes=self.axis_dim) * (2*self.L+1)**self.dim)
-                o0dy_dphi = - xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(self.omega_0_nu.reshape(self.reshape_J) * y_, axes=self.axis_dim) * (2*self.L+1)**self.dim)
-                exp_nu_mod = self.exp_nu * xp.exp(1j * omega_nu.reshape(self.reshape_Je) * dy_doa)
-                coeff_f = xp.moveaxis(self.oa_mat.reshape(self.reshape_oa) * exp_nu_mod, range(self.dim+1), range(-self.dim-1, 0))
-                oa_p = xp.power((self.oa_vec + ao2).reshape(self.r3_av) + ody_dphi.reshape(self.r3_oy), self.J_.reshape(self.r3_j))
+                dy_doa = 1j * xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(xp.roll(y_ * self.J_, -1, axis=0), axes=self.axis_dim) * (2*self.L+1)**self.dim)
+                ody_dphi = - xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(omega_nu * y_, axes=self.axis_dim) * (2*self.L+1)**self.dim)
+                o0dy_dphi = - xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(self.omega_0_nu * y_, axes=self.axis_dim) * (2*self.L+1)**self.dim)
+                exp_nu_mod = self.exp_nu.reshape(self.r_xl1l) * xp.exp(1j * omega_nu.reshape(self.r_xl11) * dy_doa.reshape(self.r_x1jl))
+                coeff_f = xp.moveaxis(self.oa_mat.reshape(self.r_j1j1) * exp_nu_mod.reshape(self.r_1ljl), range(self.dim+1), range(-self.dim-1, 0))
+                oa_p = xp.power((self.oa_vec + ao2).reshape(self.r_1xj1) + ody_dphi.reshape(self.r_1xjl), self.J_.reshape(self.r_jx11))
                 h_val = xp.fft.ifftn(f_, axes=self.axis_dim) * (2*self.L+1)**self.dim
-                coeff_g = xp.einsum('j...,j...->...', oa_p, h_val.reshape(self.r3_h)) + o0dy_dphi
+                coeff_g = xp.einsum('j...,j...->...', oa_p, h_val.reshape(self.r_jx1l)) + o0dy_dphi
                 f_ = xp.real(LA.tensorsolve(coeff_f, coeff_g))
             elif self.CanonicalTransformation == 'Type3':
-                omega_nu_e = omega_nu.reshape(self.reshape_Je)
-                f_e = f_.reshape(self.reshape_t)
-                y_t = xp.sum(xp.roll(y_ * self.J_, -1, axis=0).reshape(self.reshape_t) * self.oa_mat.reshape(self.reshape_oa) * self.exp_nu, axis=self.sum_dim)
-                y_e = y_.reshape(self.reshape_t) * self.oa_mat.reshape(self.reshape_oa) * self.exp_nu
-                coeff_f = xp.moveaxis(xp.power(self.oa_vec.reshape(self.reshape_av) - ao2 + xp.sum(omega_nu_e * y_e, axis=self.sum_dim), self.Je_) * self.exp_nu, range(self.dim+1), range(-self.dim-1, 0))
-                coeff_g = xp.sum(f_e * self.oa_mat.reshape(self.reshape_oa) * self.exp_nu * xp.exp(omega_nu_e * y_t) - self.omega_0_nu_e * y_e, axis=self.sum_dim)
+                omega_nu_e = omega_nu.reshape(self.r_1l11)
+                f_e = f_.reshape(self.r_jl11)
+                y_t = xp.sum(xp.roll(y_ * self.J_, -1, axis=0).reshape(self.r_jl11) * self.oa_mat.reshape(self.r_j1j1) * self.exp_nu.reshape(self.r_1l1l), axis=self.sum_dim)
+                y_e = y_.reshape(self.r_jl11) * self.oa_mat.reshape(self.r_j1j1) * self.exp_nu.reshape(self.r_1l1l)
+                coeff_f = xp.moveaxis(xp.power(self.oa_vec.reshape(self.r_11j1) - ao2 + xp.sum(omega_nu_e * y_e, axis=self.sum_dim), self.J_.reshape(self.r_j111)) * self.exp_nu.reshape(self.r_1l1l), range(self.dim+1), range(-self.dim-1, 0))
+                coeff_g = xp.sum(f_e * self.oa_mat.reshape(self.r_j1j1) * self.exp_nu.reshape(self.r_1l1l) * xp.exp(omega_nu_e * y_t) - self.omega_0_nu.reshape(self.r_1l11) * y_e, axis=self.sum_dim)
                 f_ = xp.real(LA.tensorsolve(coeff_f, coeff_g))
             iminus_f[self.iminus] = f_[self.iminus]
             km_ += 1
