@@ -56,10 +56,10 @@ def main():
 	case_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
 	case_options = ('GoldenMean', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
 
-	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'MaxCT', 'NormAnalytic', 'ThresholdCT'
-	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double', 'Double', 'Double'
-	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+3), 1e-11, 5000, 5000, 1.0, 1.0, 1e-2
-	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (4, 2), (7, 2), (7, 0), (8, 2), (8,0)
+	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'MaxOA', 'NormAnalytic', 'ThresholdCT', 'n_lie'
+	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double', 'Double', 'Double', 'Int'
+	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+3), 1e-11, 5000, 5000, 0.2, 1.0, 1e-2, 1
+	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (4, 2), (7, 2), (7, 0), (8, 2), (9,0), (8,0)
 
 	menu_rg_names = 'ChoiceIm', 'CanonicalTransformation', 'NormChoice', 'Precision'
 	menu_rg_types = 'Char', 'Char', 'Char', 'Int'
@@ -79,7 +79,7 @@ def main():
 	option_positions = (1, 0), (1, 3), (3, 3), (5, 3), (7, 3), (5, 0), (7, 0), (3, 0)
 
 	case_vars = definevar(tab_main, case_types, case_values)
-	makeforms(tab_main, case_vars, case_names, case_positions, (7, 20))
+	makeforms(tab_main, case_vars, case_names, case_positions, (8, 20))
 	tk.Label(tab_main, width=20, text='Choose frequency vector:', anchor='w', bg=color_bg, pady=5, font=font, fg=font_color).grid(row=0, column=0, padx=5)
 	choice_case = tk.StringVar(tab_main, value=case_options[0])
 	tk.OptionMenu(tab_main, choice_case, *case_options, command= lambda x: define_case(x, case_vars)).grid(row=0, column=1, padx=5, sticky='w')
@@ -95,7 +95,7 @@ def main():
 	makechecks(tab_main, output_vars, output_names, output_positions)
 
 	param_rg_vars = definevar(tab_params, param_rg_types, param_rg_values)
-	makeforms(tab_params, param_rg_vars, param_rg_names, param_rg_positions, (12, 5))
+	makeforms(tab_params, param_rg_vars, param_rg_names, param_rg_positions, (13, 5))
 	tk.Label(tab_params, width=10, text=None, bg=color_bg).grid(row=0, column=2)
 	menu_rg_vars = definevar(tab_params, menu_rg_types, menu_rg_values)
 	makemenus(tab_params, menu_rg_vars, menu_rg_names, menu_rg_menus, menu_rg_positions, 25)
