@@ -72,7 +72,7 @@ class RG:
             self.r_j1j1 = (self.J+1,) + self.dim * (1,) + (self.J+1,) + self.dim * (1,)
             self.r_jl11 = (self.J+1,) + self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
             self.sum_dim = tuple(range(self.dim+1))
-            self.oa_vec = 2.0 * self.MaxCT * xp.random.rand(self.J+1) - self.MaxCT
+            self.oa_vec = 2.0 * self.MaxOA * xp.random.rand(self.J+1) - self.MaxOA
             self.oa_mat = xp.vander(self.oa_vec, increasing=True).transpose()
             indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),) + self.dim * (xp.arange(0, 2*self.L+1),)
             nu_nu = xp.meshgrid(*indx, indexing='ij')
