@@ -2,6 +2,7 @@ import numpy as xp
 from numpy import linalg as LA
 import scipy.signal as sps
 import copy
+import itertools
 
 class Hamiltonian:
     def __init__(self, omega, f, error=[0, 0], count=0):
