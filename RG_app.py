@@ -56,10 +56,10 @@ def main():
 	case_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
 	case_options = ('GoldenMean', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
 
-	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'MaxOA', 'NormAnalytic', 'ThresholdCT', 'n_lie'
-	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double', 'Double', 'Double', 'Int'
-	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+3), 1e-11, 5000, 5000, 0.2, 1.0, 1e-2, 1
-	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (4, 2), (7, 2), (7, 0), (8, 2), (9,0), (8,0)
+	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'MaxOA', 'NormAnalytic'
+	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double', 'Double'
+	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+3), 1e-11, 5000, 5000, 0.2, 1.0
+	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (4, 2), (7, 2), (7, 0), (8, 2)
 
 	menu_rg_names = 'ChoiceIm', 'CanonicalTransformation', 'NormChoice', 'Precision'
 	menu_rg_types = 'Char', 'Char', 'Char', 'Int'

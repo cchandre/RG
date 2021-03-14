@@ -165,14 +165,12 @@ class RG:
                 y_[m][self.iminus[m]] = (f_[m][self.iminus[m]] - 2.0 * f_[2][self.zero_] * omega_nu[0][self.iminus[m]] * y_[m-1][self.iminus[m]])\
                                     / self.omega_0_nu[0][self.iminus[m]]
             if self.CanonicalTransformation == 'Lie':
-                n_lie = 1
-                if self.norm(iminus_f) >= self.ThresholdCT:
-                    y_ /= self.Precision(self.n_lie)
-                    ao2 /= self.Precision(self.n_lie)
-                    n_lie = self.n_lie
+                n_lie = max(0, int(xp.log2(self.norm(y_)))+1)
+                y_ /= self.Precision(2**n_lie)
+                ao2 /= self.Precision(2**n_lie)
                 y_t = xp.roll(y_ * self.J_, -1, axis=0)
                 y_o = omega_nu * y_
-                for _ in itertools.repeat(None, n_lie):
+                for _ in itertools.repeat(None, n_lie+1):
                     f_t = xp.roll(f_ * self.J_, -1, axis=0)
                     f_o = omega_nu * f_
                     sh_ = ao2 * f_t - self.omega_0_nu * y_ + self.conv_product(y_t, f_o) - self.conv_product(y_o, f_t)
