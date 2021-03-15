@@ -165,24 +165,26 @@ class RG:
                 y_[m][self.iminus[m]] = (f_[m][self.iminus[m]] - 2.0 * f_[2][self.zero_] * omega_nu[0][self.iminus[m]] * y_[m-1][self.iminus[m]])\
                                     / self.omega_0_nu[0][self.iminus[m]]
             if self.CanonicalTransformation == 'Lie':
-                n_lie = max(0, int(xp.log2(self.norm(y_)))+1)
-                y_ /= self.Precision(2**n_lie)
-                ao2 /= self.Precision(2**n_lie)
                 y_t = xp.roll(y_ * self.J_, -1, axis=0)
                 y_o = omega_nu * y_
+                n_lie = max(0, int(xp.log2(self.norm(y_t) + self.norm(y_o)))+1)
+                y_ /= self.Precision(2**n_lie)
+                y_t /= self.Precision(2**n_lie)
+                y_o /= self.Precision(2**n_lie)
+                ao2 /= self.Precision(2**n_lie)
                 for _ in itertools.repeat(None, n_lie+1):
                     f_t = xp.roll(f_ * self.J_, -1, axis=0)
                     f_o = omega_nu * f_
                     sh_ = ao2 * f_t - self.omega_0_nu * y_ + self.conv_product(y_t, f_o) - self.conv_product(y_o, f_t)
                     k_ = 2
-                    while (self.TolMax > self.norm(sh_) > self.TolLie) and (k_ < self.MaxLie):
+                    while (self.TolMaxLie > self.norm(sh_) > self.TolMinLie) and (k_ < self.MaxLie):
                         f_ += sh_
                         sh_t = xp.roll(sh_ * self.J_, -1, axis=0)
                         sh_o = omega_nu * sh_
                         sh_ = (ao2 * sh_t + self.conv_product(y_t, sh_o) - self.conv_product(y_o, sh_t)) / self.Precision(k_)
                         k_ += 1
-                    if (not (self.norm(sh_) <= self.TolLie)) and (h_.error == [0, 0]):
-                        if (self.norm(sh_) >= self.TolMax):
+                    if (not (self.norm(sh_) <= self.TolMinLie)) and (h_.error == [0, 0]):
+                        if (self.norm(sh_) >= self.TolMaxLie):
                             h_.error = [1, km_]
                         elif (k_ >= self.MaxLie):
                             h_.error = [-1, km_]

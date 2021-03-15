@@ -56,16 +56,16 @@ def main():
 	case_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
 	case_options = ('GoldenMean', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
 
-	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolLie', 'MaxIter', 'MaxLie', 'MaxOA', 'NormAnalytic'
-	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double', 'Double'
-	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+3), 1e-11, 5000, 5000, 0.2, 1.0
-	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (4, 2), (7, 2), (7, 0), (8, 2)
+	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolMinLie', 'MaxIter', 'MaxLie', 'MaxOA', 'NormAnalytic', 'TolMaxLie'
+	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double', 'Double', 'Double'
+	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+3), 1e-11, 5000, 5000, 0.2, 1.0, '{:1.0e}'.format(1e+15)
+	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (3, 2), (8, 2), (7, 0), (8, 0), (7, 2)
 
 	menu_rg_names = 'ChoiceIm', 'CanonicalTransformation', 'NormChoice', 'Precision'
 	menu_rg_types = 'Char', 'Char', 'Char', 'Int'
 	menu_rg_values = 'AK2000', 'Lie', 'sum', 64
 	menu_rg_menus = ('AK2000', 'K1999', 'AKP1998'), ('Lie', 'Type2', 'Type3'), ('sum', 'max', 'Euclidian', 'Analytic'), (32, 64, 128)
-	menu_rg_positions = (0, 4), (5, 4), (3, 4), (7, 4)
+	menu_rg_positions = (1, 4), (5, 4), (3, 4), (7, 4)
 	menu_rg_commands = None, None, None, None
 
 	output_names = 'SaveData', 'PlotResults'
@@ -76,7 +76,7 @@ def main():
 	option_names = 'DistSurf', 'DistCircle', 'Radius', 'ModesPerturb', 'Nh', 'Ncs', 'TolCS', 'NumberOfIterations'
 	option_types = 'Double', 'Double', 'Double', 'Int', 'Int', 'Int', 'Double', 'Int'
 	option_values = 1e-7, 1e-5, 1e-5, 3, 10, 100, 1e-7, 10
-	option_positions = (1, 0), (1, 3), (3, 3), (5, 3), (7, 3), (5, 0), (7, 0), (3, 0)
+	option_positions = (1, 0), (2, 3), (4, 3), (6, 3), (8, 3), (5, 0), (7, 0), (3, 0)
 
 	case_vars = definevar(tab_main, case_types, case_values)
 	makeforms(tab_main, case_vars, case_names, case_positions, (8, 20))
