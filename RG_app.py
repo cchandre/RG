@@ -56,10 +56,10 @@ def main():
 	case_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
 	case_options = ('GoldenMean', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
 
-	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolMinLie', 'MaxIter', 'MaxLie', 'MaxOA', 'NormAnalytic', 'TolMaxLie'
-	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Int', 'Double', 'Double', 'Double'
-	param_rg_values = 5, 5, 0.4, 0.1, 1e-9, '{:1.0e}'.format(1e+3), 1e-11, 5000, 5000, 0.2, 1.0, '{:1.0e}'.format(1e+15)
-	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (3, 2), (8, 2), (7, 0), (8, 0), (7, 2)
+	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolMinLie', 'MaxIter', 'MaxOA', 'NormAnalytic'
+	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Double', 'Double'
+	param_rg_values = 5, 5, 0.4, 0.1, 1e-8, '{:1.0e}'.format(1e+1), 1e-10, 1000, 0.2, 1.0
+	param_rg_positions = (1, 0), (2, 0), (4,0), (5, 0), (1, 2), (2, 2), (6, 2), (3, 2), (7, 0), (8, 0)
 
 	menu_rg_names = 'ChoiceIm', 'CanonicalTransformation', 'NormChoice', 'Precision'
 	menu_rg_types = 'Char', 'Char', 'Char', 'Int'
@@ -116,7 +116,6 @@ def main():
 	errorcode = tk.Text(tab_about, height=9, width=35, pady=10, bg=color_bg, font=font, fg=font_color)
 	errorcode.insert(tk.INSERT, "ERROR CODES\n\n")
 	errorcode.insert(tk.INSERT, "    k-th Lie transform diverging: [1, k]\n")
-	errorcode.insert(tk.INSERT, "    k-th Lie transform not converging: [-1, k]\n")
 	errorcode.insert(tk.INSERT, "    I- iterations diverging: [2, 0]\n")
 	errorcode.insert(tk.INSERT, "    I- iterations not converging: [-2, 0]\n")
 	errorcode.insert(tk.INSERT, "    below (approach): [3, 0]\n")

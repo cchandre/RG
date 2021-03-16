@@ -1,6 +1,7 @@
 import numpy as xp
 from numpy import linalg as LA
 import scipy.signal as sps
+from scipy.special import factorial, lambertw
 import copy
 import itertools
 
@@ -56,6 +57,10 @@ class RG:
         for it in range(self.dim):
             self.nu_mask += (self.nu[it][mask],)
             self.N_nu_mask += (N_nu[it][mask],)
+        if self.CanonicalTransformation == 'Lie':
+            MaxLie = 5 * int(xp.exp(xp.real(lambertw(-xp.log(self.TolMinLie)))))
+            k = xp.arange(MaxLie, dtype=xp.int)
+            self.veck = xp.power(self.TolMinLie * (k+2) / (k+1) * factorial(k+1), 1/(k+1))
         if self.CanonicalTransformation in ['Type2', 'Type3']:
             self.r_x1jl = self.dim * (1,) + (self.J+1,) + self.dim * (2*self.L+1,)
             self.r_xl11 = self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
@@ -167,27 +172,27 @@ class RG:
             if self.CanonicalTransformation == 'Lie':
                 y_t = xp.roll(y_ * self.J_, -1, axis=0)
                 y_o = omega_nu * y_
-                n_lie = max(0, int(xp.log2(self.norm(y_t) + self.norm(y_o)))+1)
+                normLs = xp.abs(omega_nu).max() * self.norm(y_t) + self.J * self.norm(y_o)
+                n_lie = max(0, int(xp.log2(normLs))+1)
                 y_ /= self.Precision(2**n_lie)
                 y_t /= self.Precision(2**n_lie)
                 y_o /= self.Precision(2**n_lie)
                 ao2 /= self.Precision(2**n_lie)
+                normLs = xp.abs(omega_nu).max() * self.norm(y_t) + self.J * self.norm(y_o)
+                kmax = max(3, xp.argmin(self.veck < normLs))
                 for _ in itertools.repeat(None, n_lie+1):
                     f_t = xp.roll(f_ * self.J_, -1, axis=0)
                     f_o = omega_nu * f_
                     sh_ = ao2 * f_t - self.omega_0_nu * y_ + self.conv_product(y_t, f_o) - self.conv_product(y_o, f_t)
                     k_ = 2
-                    while (self.TolMaxLie > self.norm(sh_) > self.TolMinLie) and (k_ < self.MaxLie):
+                    for k_ in range(2, kmax):
                         f_ += sh_
                         sh_t = xp.roll(sh_ * self.J_, -1, axis=0)
                         sh_o = omega_nu * sh_
                         sh_ = (ao2 * sh_t + self.conv_product(y_t, sh_o) - self.conv_product(y_o, sh_t)) / self.Precision(k_)
                         k_ += 1
-                    if (not (self.norm(sh_) <= self.TolMinLie)) and (h_.error == [0, 0]):
-                        if (self.norm(sh_) >= self.TolMaxLie):
+                    if (self.norm(sh_) >= self.TolMax) and (h_.error == [0, 0]):
                             h_.error = [1, km_]
-                        elif (k_ >= self.MaxLie):
-                            h_.error = [-1, km_]
             elif self.CanonicalTransformation == 'Type2':
                 dy_doa = 1j * xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(xp.roll(y_ * self.J_, -1, axis=0), axes=self.axis_dim) * (2*self.L+1)**self.dim)
                 ody_dphi = - xp.einsum('ji,j...->i...', self.oa_mat, xp.fft.ifftn(omega_nu * y_, axes=self.axis_dim) * (2*self.L+1)**self.dim)
