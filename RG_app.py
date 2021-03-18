@@ -70,7 +70,7 @@ def main():
 
 	output_names = 'SaveData', 'PlotResults'
 	output_types = 'Bool', 'Bool'
-	output_values = True, False
+	output_values = False, False
 	output_positions = (6, 3), (7, 3)
 
 	option_names = 'DistSurf', 'DistCircle', 'Radius', 'ModesPerturb', 'Nh', 'Ncs', 'TolCS', 'NumberOfIterations'

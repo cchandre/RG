@@ -114,13 +114,11 @@ class RG:
         h_ = copy.deepcopy(h)
         h_.error = [0, 0]
         it_conv = 0
-        while (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (h_.error == [0, 0]):
+        while (self.TolMax > self.norm_int(h_.f) > self.TolMin):
             h_ = self.renormalization_group(h_)
             it_conv += 1
-        if (self.norm_int(h_.f) <= self.TolMin) and (h_.error == [0, 0]):
+        if (self.norm_int(h_.f) <= self.TolMin):
             return True
-        elif (self.norm_int(h_.f) >= self.TolMax) and (h_.error == [0, 0]):
-            return False
         else:
             h.count = it_conv
             h.error = h_.error
@@ -162,7 +160,7 @@ class RG:
         km_ = 0
         iminus_f = xp.zeros_like(f_)
         iminus_f[self.iminus] = f_[self.iminus]
-        while (self.TolMax > self.norm(iminus_f) > self.TolMin) and (self.TolMax > self.norm(f_) > self.TolMin) and (km_ < self.MaxIter) and (h_.error == [0, 0]):
+        while (self.TolMax > self.norm(iminus_f) > self.TolMin) and (self.TolMax > self.norm(f_) > self.TolMin) and (km_ < self.MaxIter):
             y_ = xp.zeros_like(f_)
             ao2 = - f_[1][self.zero_] / (2.0 * f_[2][self.zero_])
             y_[0][self.iminus[0]] = f_[0][self.iminus[0]] / self.omega_0_nu[0][self.iminus[0]]
@@ -179,18 +177,16 @@ class RG:
                 y_o /= self.Precision(2**n_lie)
                 ao2 /= self.Precision(2**n_lie)
                 normLs = xp.abs(omega_nu).max() * self.norm(y_t) + self.J * self.norm(y_o)
-                kmax = max(3, xp.argmin(self.veck < normLs))
+                kmax = max(2, xp.argmin(self.veck < normLs))
                 for _ in itertools.repeat(None, n_lie+1):
                     f_t = xp.roll(f_ * self.J_, -1, axis=0)
                     f_o = omega_nu * f_
                     sh_ = ao2 * f_t - self.omega_0_nu * y_ + self.conv_product(y_t, f_o) - self.conv_product(y_o, f_t)
-                    k_ = 2
-                    for k_ in range(2, kmax):
+                    for k_ in range(2, kmax+1):
                         f_ += sh_
                         sh_t = xp.roll(sh_ * self.J_, -1, axis=0)
                         sh_o = omega_nu * sh_
                         sh_ = (ao2 * sh_t + self.conv_product(y_t, sh_o) - self.conv_product(y_o, sh_t)) / self.Precision(k_)
-                        k_ += 1
                     if (self.norm(sh_) >= self.TolMax) and (h_.error == [0, 0]):
                             h_.error = [1, km_]
             elif self.CanonicalTransformation == 'Type2':
@@ -214,7 +210,7 @@ class RG:
             iminus_f[self.iminus] = f_[self.iminus]
             km_ += 1
             f_ = self.sym(f_)
-        if (not (self.norm(iminus_f) <= self.TolMin)) and (h_.error == [0, 0]):
+        if (not (self.norm(iminus_f) <= self.TolMin)):
             if (self.norm(iminus_f) >= self.TolMax):
                 h_.error = [2, 0]
             elif (km_ >= self.MaxIter):
