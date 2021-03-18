@@ -19,7 +19,7 @@ font = 'Garamond 14 bold'
 font_color = '#000080'
 NumCores = multiprocessing.cpu_count()
 
-version_rgapp = '0.5'
+version_rgapp = '0.9'
 date_rgapp = time.strftime("%Y / %m / %d")
 
 def main():
@@ -54,7 +54,7 @@ def main():
 	case_types = 'Char', 'Char', 'Char', 'Char', 'Char', 'Char'
 	case_positions = (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)
 	case_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
-	case_options = ('GoldenMean', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
+	case_options = ('GoldenMean', 'Sqrt(2)', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
 
 	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolMinLie', 'MaxIter', 'MaxOA', 'NormAnalytic'
 	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Double', 'Double'
@@ -199,16 +199,21 @@ def rgrun(run_method, parameters, options, tabs):
 def define_case(case_option, params):
 	if case_option == 'GoldenMean':
 	    N = [[1, 1], [1, 0]]
-	    Eigenvalues = [-0.618033988749895, 1.618033988749895]
-	    omega_0 = [Eigenvalues[0], 1.0]
+	    omega_0 = [-0.618033988749895, 1.0]
 	    Omega = [1.0, 0.0]
 	    K = ((0, 1, 0), (0, 1, 1))
 	    KampInf = [0.02, 0.02]
 	    KampSup = [0.04, 0.04]
+	elif case_option == 'Sqrt(2)':
+		N = [[1, 1], [2, 1]]
+		omega_0 = [-1.414213562373095, 1.0]
+		Omega = [1.0, 1.0]
+		K = ((1, 1), (0, 1))
+		KampInf = [0.0, 0.0]
+		KampSup = [0.02, 0.02]
 	elif case_option == 'SpiralMean':
 	    N = [[0, 0, 1], [1, 0, 0], [0, 1, -1]]
 	    sigma = 1.3247179572447460259
-	    Eigenvalues = [1.0 / sigma]
 	    omega_0 = [sigma**2, sigma, 1.0]
 	    Omega = [1.0, 1.0, -1.0]
 	    K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
@@ -217,9 +222,6 @@ def define_case(case_option, params):
 	elif case_option == 'TauMean':
 	    N = [[0, 1, -1], [1, -1, 1], [0, -1, 2]]
 	    Tau = 0.445041867912629
-	    Tau2 = 1.801937735804839
-	    Tau3 = -1.246979603717467
-	    Eigenvalues = [Tau, Tau2, Tau3]
 	    omega_0 = [1.0, Tau, 1.0 - Tau - Tau**2]
 	    Omega = [1.0, 1.0, -1.0]
 	    K = ((0, 0, -1, 1), (0, 1, -1, -1), (0, 0, 0, 1))
@@ -228,7 +230,6 @@ def define_case(case_option, params):
 	elif case_option == 'OMean':
 	    N = [[0, 0, 1], [1, 0, -1], [0, 1, 0]]
 	    o_val = 0.682327803828019
-	    Eigenvalues = [o_val]
 	    omega_0 = [1.0, o_val, o_val**2]
 	    Omega = [1.0, 1.0, 1.0]
 	    K = ((0, 1, -1, -1), (0, 0, 1, -1), (0, 1, -1, 0))
@@ -237,9 +238,6 @@ def define_case(case_option, params):
 	elif case_option == 'EtaMean':
 	    N = [[-1, 1, 0], [1, 1, 1], [0, 1, 0]]
 	    Eta = -0.347296355333861
-	    Eta2 = -1.532088886237956
-	    Eta3 = 1.879385241571816
-	    Eigenvalues = [Eta, Eta2, Eta3]
 	    omega_0 = [Eta **2 - Eta - 1.0, Eta, 1.0]
 	    Omega = [1.0, -1.0, 1.0]
 	    K = ((0, 1, 1, 1), (0, -1, 1, 0), (0, 0, 1, 0))

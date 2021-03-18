@@ -177,16 +177,17 @@ class RG:
                 y_o /= self.Precision(2**n_lie)
                 ao2 /= self.Precision(2**n_lie)
                 normLs = xp.abs(omega_nu).max() * self.norm(y_t) + self.J * self.norm(y_o)
-                kmax = max(2, xp.argmin(self.veck < normLs))
+                kmax = max(1, xp.argmin(self.veck < normLs))
                 for _ in itertools.repeat(None, n_lie+1):
                     f_t = xp.roll(f_ * self.J_, -1, axis=0)
                     f_o = omega_nu * f_
                     sh_ = ao2 * f_t - self.omega_0_nu * y_ + self.conv_product(y_t, f_o) - self.conv_product(y_o, f_t)
+                    f_ += sh_
                     for k_ in range(2, kmax+1):
-                        f_ += sh_
                         sh_t = xp.roll(sh_ * self.J_, -1, axis=0)
                         sh_o = omega_nu * sh_
                         sh_ = (ao2 * sh_t + self.conv_product(y_t, sh_o) - self.conv_product(y_o, sh_t)) / self.Precision(k_)
+                        f_ += sh_
                     if (self.norm(sh_) >= self.TolMax) and (h_.error == [0, 0]):
                             h_.error = [1, km_]
             elif self.CanonicalTransformation == 'Type2':
