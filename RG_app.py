@@ -208,7 +208,7 @@ def define_case(case_option, params):
 		N = [[1, 1], [2, 1]]
 		omega_0 = [-1.414213562373095, 1.0]
 		Omega = [1.0, 1.0]
-		K = ((1, 1), (0, 1))
+		K = ((0, 1, 1), (0, 0, 1))
 		KampInf = [0.0, 0.0]
 		KampSup = [0.02, 0.02]
 	elif case_option == 'SpiralMean':
