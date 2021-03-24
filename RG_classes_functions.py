@@ -79,9 +79,9 @@ class RG:
             self.sum_dim = tuple(range(self.dim+1))
             self.oa_vec = 2.0 * self.MaxOA * xp.random.rand(self.J+1) - self.MaxOA
             self.oa_mat = xp.vander(self.oa_vec, increasing=True).transpose()
-            indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),) + self.dim * (xp.arange(0, 2*self.L+1),)
+            indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),) + self.dim * (xp.arange(0, 2*self.L+1)/ self.Precision((2*self.L+1)),)
             nu_nu = xp.meshgrid(*indx, indexing='ij')
-            nu_phi = (2.0 * xp.pi * sum(nu_nu[k] * nu_nu[k+self.dim] for k in range(self.dim)) / self.Precision(2*self.L+1))
+            nu_phi = 2.0 * xp.pi * sum(nu_nu[k] * nu_nu[k+self.dim] for k in range(self.dim))
             self.exp_nu = xp.exp(1j * nu_phi)
 
     def norm(self, fun):
