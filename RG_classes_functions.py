@@ -108,6 +108,7 @@ class RG:
     def sym(self, fun):
         fun_ = (fun + xp.roll(xp.flip(fun, axis=self.axis_dim), 1, axis=self.axis_dim).conj()) / 2.0
         fun_[0][self.zero_] = 0.0
+        fun_[xp.abs(fun_) <= self.TolMin**2] = 0.0
         return fun_
 
     def converge(self, h):
@@ -170,7 +171,7 @@ class RG:
             if self.CanonicalTransformation == 'Lie':
                 y_t = xp.roll(y_ * self.J_, -1, axis=0)
                 y_o = omega_nu * y_
-                normLs = xp.abs(omega_nu).max() * self.norm(y_t) + self.J * self.norm(y_o)
+                normLs = xp.abs(omega_nu).max() * self.norm(y_t) + self.J * self.norm(y_o) + self.TolMin**2
                 n_lie = max(0, int(xp.log2(normLs))+1)
                 y_ /= self.Precision(2**n_lie)
                 y_t /= self.Precision(2**n_lie)
@@ -182,11 +183,13 @@ class RG:
                     f_t = xp.roll(f_ * self.J_, -1, axis=0)
                     f_o = omega_nu * f_
                     sh_ = ao2 * f_t - self.omega_0_nu * y_ + self.conv_product(y_t, f_o) - self.conv_product(y_o, f_t)
+                    sh_[xp.abs(sh_) <= self.TolMin**2] = 0.0
                     f_ += sh_
                     for k_ in range(2, kmax+1):
                         sh_t = xp.roll(sh_ * self.J_, -1, axis=0)
                         sh_o = omega_nu * sh_
                         sh_ = (ao2 * sh_t + self.conv_product(y_t, sh_o) - self.conv_product(y_o, sh_t)) / self.Precision(k_)
+                        sh_[xp.abs(sh_) <= self.TolMin**2] = 0.0
                         f_ += sh_
                     if (self.norm(sh_) >= self.TolMax) and (h_.error == [0, 0]):
                             h_.error = [1, km_]
