@@ -18,10 +18,10 @@ class RG:
             setattr(self, key, dict_param[key])
         if self.Precision == 32:
             self.Precision = xp.float32
+        elif self.Precision == 64:
+            self.Precision = xp.float64
         elif self.Precision == 128:
             self.Precision = xp.float128
-        else:
-            self.Precision = xp.float64
         self.N = xp.asarray(self.N, dtype=int)
         self.dim = len(self.omega_0)
         self.omega_0 = xp.asarray(self.omega_0, dtype=self.Precision)
@@ -58,10 +58,9 @@ class RG:
             self.nu_mask += (self.nu[it][mask],)
             self.N_nu_mask += (N_nu[it][mask],)
         if self.CanonicalTransformation == 'Lie':
-            MaxLie = 5 * int(xp.exp(xp.real(lambertw(-xp.log(self.TolMinLie)))))
-            k = xp.arange(MaxLie, dtype=xp.int)
+            k = xp.arange(5 * int(xp.exp(xp.real(lambertw(-xp.log(self.TolMinLie))))))
             self.veck = xp.power(self.TolMinLie * (k+2) / (k+1) * factorial(k+1), 1/(k+1))
-        if self.CanonicalTransformation in ['Type2', 'Type3']:
+        else:
             self.r_x1jl = self.dim * (1,) + (self.J+1,) + self.dim * (2*self.L+1,)
             self.r_xl11 = self.dim * (2*self.L+1,) + (1,) + self.dim * (1,)
             self.r_xl1l = self.dim * (2*self.L+1,) + (1,) + self.dim * (2*self.L+1,)
@@ -79,16 +78,16 @@ class RG:
             self.sum_dim = tuple(range(self.dim+1))
             self.oa_vec = 2.0 * self.MaxOA * xp.random.rand(self.J+1) - self.MaxOA
             self.oa_mat = xp.vander(self.oa_vec, increasing=True).transpose()
-            indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),) + self.dim * (xp.arange(0, 2*self.L+1)/ self.Precision((2*self.L+1)),)
+            indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),) + self.dim * (xp.linspace(0.0, 1.0, 2*self.L+1, endpoint=False),)
             nu_nu = xp.meshgrid(*indx, indexing='ij')
             nu_phi = 2.0 * xp.pi * sum(nu_nu[k] * nu_nu[k+self.dim] for k in range(self.dim))
             self.exp_nu = xp.exp(1j * nu_phi)
 
     def norm(self, fun):
-        if self.NormChoice == 'max':
-            return xp.abs(fun).max()
-        elif self.NormChoice == 'sum':
+        if self.NormChoice == 'sum':
             return xp.abs(fun).sum()
+        elif self.NormChoice == 'max':
+            return xp.abs(fun).max()
         elif self.NormChoice == 'Euclidian':
             return xp.sqrt((xp.abs(fun) ** 2).sum())
         elif self.NormChoice == 'Analytic':
@@ -125,7 +124,7 @@ class RG:
             h.error = h_.error
             return False
 
-    def approach(self, h_inf, h_sup, dist, strict=False):
+    def approach(self, h_inf, h_sup, dist=self.DistSurf, strict=False):
         h_inf_ = copy.deepcopy(h_inf)
         h_sup_ = copy.deepcopy(h_sup)
         h_inf_.error = [0, 0]
