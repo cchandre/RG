@@ -19,7 +19,7 @@ font = 'Garamond 14 bold'
 font_color = '#000080'
 NumCores = multiprocessing.cpu_count()
 
-version_rgapp = '0.9'
+version_rgapp = '1.1'
 date_rgapp = time.strftime("%Y / %m / %d")
 
 def main():
