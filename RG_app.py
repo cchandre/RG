@@ -50,7 +50,7 @@ def main():
 	tab_parent.add(tab_about, text="About")
 	tab_parent.pack(expand=1, fill='both')
 
-	case_names = 'N', 'omega_0', 'Omega', 'K', 'KampInf', 'KampSup'
+	case_names = 'N', 'omega0', 'Omega', 'K', 'KampInf', 'KampSup'
 	case_types = 'Char', 'Char', 'Char', 'Char', 'Char', 'Char'
 	case_positions = (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)
 	case_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
@@ -64,7 +64,7 @@ def main():
 	menu_rg_names = 'ChoiceIm', 'CanonicalTransformation', 'NormChoice', 'Precision'
 	menu_rg_types = 'Char', 'Char', 'Char', 'Int'
 	menu_rg_values = 'AK2000', 'Lie', 'sum', 64
-	menu_rg_menus = ('AK2000', 'K1999', 'AKP1998'), ('Lie', 'Type2', 'Type3'), ('sum', 'max', 'Euclidian', 'Analytic'), (32, 64, 128)
+	menu_rg_menus = ('AK2000', 'K1999', 'AKP1998'), ('Lie', 'Type2', 'Type3'), ('sum', 'max', 'Euclidean', 'Analytic'), (32, 64, 128)
 	menu_rg_positions = (1, 4), (5, 4), (3, 4), (7, 4)
 	menu_rg_commands = None, None, None, None
 
@@ -141,17 +141,15 @@ def main():
 	rg_app.mainloop()
 
 def definevar(root, types, values):
+	dict_types = {
+		'Double': lambda value : tk.DoubleVar(root, value=value),
+		'Int': lambda value : tk.IntVar(root, value=value),
+		'Char': lambda value : tk.StringVar(root, value=value),
+		'Bool': lambda value : tk.BooleanVar(root, value=value)
+	}
 	paramlist = []
 	for (type, value) in zip(types, values):
-		if type == 'Double':
-			tempvar = tk.DoubleVar(root, value=value)
-		elif type == 'Int':
-			tempvar = tk.IntVar(root, value=value)
-		elif type == 'Char':
-			tempvar = tk.StringVar(root, value=value)
-		elif type == 'Bool':
-			tempvar = tk.BooleanVar(root, value=value)
-		paramlist.append(tempvar)
+		paramlist.append(dict_types.get(type)(value))
 	return paramlist
 
 def makeforms(root, fields, names, positions, width):
@@ -179,14 +177,9 @@ def rgrun(run_method, parameters, options, tabs):
 		dict_param[name] = var.get()
 	for (name, var) in zip(options[0], options[1]):
 		dict_param[name] = var.get()
-	dict_param['N'] = list(eval(dict_param['N']))
-	dict_param['omega_0'] = list(eval(dict_param['omega_0']))
-	dict_param['Omega'] = list(eval(dict_param['Omega']))
-	dict_param['K'] = list(eval(dict_param['K']))
-	dict_param['KampInf'] = list(eval(dict_param['KampInf']))
-	dict_param['KampSup'] = list(eval(dict_param['KampSup']))
+	for key in ['N', 'omega0', 'Omega', 'K', 'KampInf', 'KampSup']:
+		dict_param[key] = list(eval(dict_param[key]))
 	case_study = RG.RG(dict_param)
-	case_study.DictParams = dict_param
 	if run_method.get() == 'Iterates':
 		iterates(case_study, tabs)
 	elif run_method.get() == 'Circle Iterates':
@@ -198,57 +191,59 @@ def rgrun(run_method, parameters, options, tabs):
 
 def define_case(case_option, params):
 	if case_option == 'GoldenMean':
-	    N = [[1, 1], [1, 0]]
-	    omega_0 = [-0.618033988749895, 1.0]
-	    Omega = [1.0, 0.0]
-	    K = ((0, 1, 0), (0, 1, 1))
-	    KampInf = [0.02, 0.02]
-	    KampSup = [0.04, 0.04]
+	    dict_params = {
+			'N': [[1, 1], [1, 0]],
+	    	'omega0': [-0.618033988749895, 1.0],
+	    	'Omega': [1.0, 0.0],
+	    	'K': ((0, 1, 0), (0, 1, 1)),
+	    	'KampInf': [0.02, 0.02],
+	    	'KampSup': [0.04, 0.04]}
 	elif case_option == 'Sqrt(2)':
-		N = [[1, 1], [2, 1]]
-		omega_0 = [-1.414213562373095, 1.0]
-		Omega = [1.0, 1.0]
-		K = ((0, 1, 1), (0, 0, 1))
-		KampInf = [0.0, 0.0]
-		KampSup = [0.02, 0.02]
+		dict_params = {
+			'N': [[1, 1], [2, 1]],
+			'omega0': [-1.414213562373095, 1.0],
+			'Omega': [1.0, 1.0],
+			'K': ((0, 1, 1), (0, 0, 1)),
+			'KampInf': [0.0, 0.0],
+			'KampSup': [0.02, 0.02]}
 	elif case_option == 'SpiralMean':
-	    N = [[0, 0, 1], [1, 0, 0], [0, 1, -1]]
-	    sigma = 1.3247179572447460259
-	    omega_0 = [sigma**2, sigma, 1.0]
-	    Omega = [1.0, 1.0, -1.0]
-	    K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
-	    KampInf = [0.034, 0.089, 0.1]
-	    KampSup = [0.036, 0.091, 0.1]
+		sigma = 1.3247179572447460259
+		dict_params = {
+	    	'N': [[0, 0, 1], [1, 0, 0], [0, 1, -1]],
+	    	'omega0': [sigma**2, sigma, 1.0],
+	    	'Omega': [1.0, 1.0, -1.0],
+	    	'K': ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)),
+	    	'KampInf': [0.034, 0.089, 0.1],
+	    	'KampSup': [0.036, 0.091, 0.1]}
 	elif case_option == 'TauMean':
-	    N = [[0, 1, -1], [1, -1, 1], [0, -1, 2]]
-	    Tau = 0.445041867912629
-	    omega_0 = [1.0, Tau, 1.0 - Tau - Tau**2]
-	    Omega = [1.0, 1.0, -1.0]
-	    K = ((0, 0, -1, 1), (0, 1, -1, -1), (0, 0, 0, 1))
-	    KampInf = [0.0, 0.0, 0.0]
-	    KampSup = [0.001, 0.007, 0.01]
+		Tau = 0.445041867912629
+		dict_params = {
+	    	'N': [[0, 1, -1], [1, -1, 1], [0, -1, 2]],
+	    	'omega0': [1.0, Tau, 1.0 - Tau - Tau**2],
+	    	'Omega': [1.0, 1.0, -1.0],
+	    	'K': ((0, 0, -1, 1), (0, 1, -1, -1), (0, 0, 0, 1)),
+	    	'KampInf': [0.0, 0.0, 0.0],
+	    	'KampSup': [0.001, 0.007, 0.01]}
 	elif case_option == 'OMean':
-	    N = [[0, 0, 1], [1, 0, -1], [0, 1, 0]]
-	    o_val = 0.682327803828019
-	    omega_0 = [1.0, o_val, o_val**2]
-	    Omega = [1.0, 1.0, 1.0]
-	    K = ((0, 1, -1, -1), (0, 0, 1, -1), (0, 1, -1, 0))
-	    KampInf = [0.0, 0.0, 0.0]
-	    KampSup = [0.1, 0.1, 0.1]
+		o_val = 0.682327803828019
+		dict_params = {
+	    	'N': [[0, 0, 1], [1, 0, -1], [0, 1, 0]],
+	    	'omega0': [1.0, o_val, o_val**2],
+	    	'Omega': [1.0, 1.0, 1.0],
+	    	'K': ((0, 1, -1, -1), (0, 0, 1, -1), (0, 1, -1, 0)),
+	    	'KampInf': [0.0, 0.0, 0.0],
+	    	'KampSup': [0.1, 0.1, 0.1]}
 	elif case_option == 'EtaMean':
-	    N = [[-1, 1, 0], [1, 1, 1], [0, 1, 0]]
-	    Eta = -0.347296355333861
-	    omega_0 = [Eta **2 - Eta - 1.0, Eta, 1.0]
-	    Omega = [1.0, -1.0, 1.0]
-	    K = ((0, 1, 1, 1), (0, -1, 1, 0), (0, 0, 1, 0))
-	    KampInf = [0.0, 0.0, 0.0]
-	    KampSup = [0.1, 0.1, 0.1]
-	params[0].set(str(N))
-	params[1].set(str(omega_0))
-	params[2].set(str(Omega))
-	params[3].set(str(K))
-	params[4].set(str(KampInf))
-	params[5].set(str(KampSup))
+		Eta = -0.347296355333861
+		dict_params = {
+	    	'N': [[-1, 1, 0], [1, 1, 1], [0, 1, 0]],
+	    	'omega0': [Eta **2 - Eta - 1.0, Eta, 1.0],
+	    	'Omega': [1.0, -1.0, 1.0],
+	    	'K': ((0, 1, 1, 1), (0, -1, 1, 0), (0, 0, 1, 0)),
+	    	'KampInf': [0.0, 0.0, 0.0],
+	    	'KampSup': [0.1, 0.1, 0.1]}
+		for i, key in enumerate(dict_params):
+			params[i].set(key)
 
 def iterates(case, tabs):
 	h_inf, h_sup = case.generate_2Hamiltonians()
@@ -330,7 +325,7 @@ def converge_point(val1, val2, case):
 	k_amp_ = case.KampSup.copy()
 	k_amp_[0] = val1
 	k_amp_[1] = val2
-	h_ = case.generate_1Hamiltonian(case.K, k_amp_, case.Omega, symmetric=True)
+	h_ = case.generate_1Hamiltonian(case.K, k_amp_, [case.omega0, case.Omega], symmetric=True)
 	return [int(case.converge(h_)), h_.count], h_.error
 
 def converge_region(case, tabs):
