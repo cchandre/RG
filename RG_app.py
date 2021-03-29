@@ -3,8 +3,7 @@ from tkinter import ttk
 from tkinter import scrolledtext
 import numpy as xp
 from itertools import chain
-from functools import partial
-import multiprocessing
+import multiprocess
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib import cm
@@ -17,7 +16,7 @@ import RG_classes_functions as RG
 color_bg = '#9BB7D4'
 font = 'Garamond 14 bold'
 font_color = '#000080'
-NumCores = multiprocessing.cpu_count()
+NumCores = multiprocess.cpu_count()
 
 version_rgapp = '1.1'
 date_rgapp = time.strftime("%Y / %m / %d")
@@ -292,16 +291,16 @@ def compute_cr(epsilon, case):
 	h_inf, h_sup = case_.generate_2Hamiltonians()
 	if case.converge(h_inf) and (not case.converge(h_sup)):
 		h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.TolCS)
-		return 2.0 * xp.array([h_inf.f[case.K[0]], h_inf.f[case.K[1]]])
+		return 2.0 * [h_inf.f[case.K[0]], h_inf.f[case.K[1]]]
 	else:
-		return 2.0 * xp.array([h_inf.f[case.K[0]], xp.nan])
+		return 2.0 * [h_inf.f[case.K[0]], xp.nan]
 
 def critical_surface(case, tabs):
 	timestr = time.strftime("%Y%m%d_%H%M")
 	epsilon_ = xp.linspace(0.0, 1.0, case.Ncs)
-	pool = multiprocessing.Pool(NumCores)
+	pool = multiprocess.Pool(NumCores)
 	data = []
-	compfun = partial(compute_cr, case=case)
+	compfun = lambda epsilon: compute_cr(epsilon, case=case)
 	progress = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=len(epsilon_), mode='determinate')
 	progress.grid(row=10, column=0, columnspan=4, sticky='s')
 	progress['value'] = 0
@@ -332,14 +331,14 @@ def converge_region(case, tabs):
 	timestr = time.strftime("%Y%m%d_%H%M")
 	x_vec = xp.linspace(case.KampInf[0], case.KampSup[0], case.Ncs)
 	y_vec = xp.linspace(case.KampInf[1], case.KampSup[1], case.Ncs)
-	pool = multiprocessing.Pool(NumCores)
+	pool = multiprocess.Pool(NumCores)
 	data = []
 	info = []
 	progress1 = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=case.Ncs, mode='determinate')
 	progress1.grid(row=10, column=0, columnspan=4, sticky='s')
 	progress1['value'] = 0
 	for y_ in y_vec:
-		converge_point_ = partial(converge_point, val2=y_, case=case)
+		converge_point_ = lambda val1: converge_point(val1, val2=y_, case=case)
 		progress2 = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=case.Ncs, mode='determinate')
 		progress2.grid(row=11, column=0, columnspan=4, sticky='s')
 		progress2['value'] = 0
@@ -395,8 +394,8 @@ def iterate_circle(case, tabs):
 			h_sup_.f = h_sup.f + v1 * xp.cos(theta) + v2 * xp.sin(theta)
 			circle_inf.append(h_inf_)
 			circle_sup.append(h_sup_)
-		pool = multiprocessing.Pool(NumCores)
-		approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, case=case, dist=case.DistSurf, strict=True)
+		pool = multiprocess.Pool(NumCores)
+		approach_circle = lambda k: approach_set(k, set1=circle_inf, set2=circle_sup, case=case, dist=case.DistSurf, strict=True)
 		pool.imap(approach_circle, iterable=range(case.Nh+1))
 		Coord = xp.zeros((case.Nh+1, 2, case.NumberOfIterations))
 		progress = ttk.Progressbar(tabs[0], orient=tk.HORIZONTAL, length=500, maximum=case.NumberOfIterations, mode='determinate')
@@ -412,10 +411,9 @@ def iterate_circle(case, tabs):
 				ax.plot(Coord[:, 0, i_] / case.Radius ** 2, Coord[:, 1, i_] / case.Radius ** 2, label='%d -th iterate' % i_)
 				ax.legend()
 				plt.pause(1e-17)
-			renfunc = partial(case.renormalization_group)
-			circle_inf = pool.imap(renfunc, iterable=circle_inf)
-			circle_sup = pool.imap(renfunc, iterable=circle_sup)
-			approach_circle = partial(approach_set, set1=circle_inf, set2=circle_sup, case=case, dist=case.DistSurf, strict=True)
+			circle_inf = pool.imap(case.renormalization_group, iterable=circle_inf)
+			circle_sup = pool.imap(case.renormalization_group, iterable=circle_sup)
+			approach_circle = lambda k: approach_set(k, set1=circle_inf, set2=circle_sup, case=case, dist=case.DistSurf, strict=True)
 			pool.imap(approach_circle, iterable=range(case.Nh+1))
 			hc_inf = case.renormalization_group(hc_inf)
 			hc_sup = case.renormalization_group(hc_sup)
@@ -428,12 +426,9 @@ def iterate_circle(case, tabs):
 def save_data(name, data, timestr, case, info=[]):
 	if case.SaveData:
 		mdic = case.DictParams.copy()
-		mdic.update({'data': data})
-		mdic.update({'info': info})
-		today = date.today()
-		date_today = today.strftime(" %B %d, %Y\n")
-		email = ' cristel.chandre@univ-amu.fr'
-		mdic.update({'date': date_today, 'author': email})
+		mdic.update({'data': data, 'info': info})
+		date_today = date.today().strftime(" %B %d, %Y\n")
+		mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
 		savemat(name + '_' + timestr + '.mat', mdic)
 
 def plotf(fun, case):

@@ -10,7 +10,7 @@ class RG:
         for key in dict_param:
             setattr(self, key, dict_param[key])
         self.DictParams = dict_param
-        self.Precision = {32: xp.float32, 64: xp.float64, 128: xp.float128}.get(self.Precision, xp.float64)()
+        self.Precision = {32: xp.float32, 64: xp.float64, 128: xp.float128}.get(self.Precision, xp.float64)
         self.N = xp.asarray(self.N, dtype=int)
         self.dim = len(self.omega0)
         self.omega0 = xp.asarray(self.omega0, dtype=self.Precision)
@@ -115,7 +115,7 @@ class RG:
             h.error = h_.error
             return False
 
-    def approach(self, h_inf, h_sup, dist=self.DistSurf, strict=False):
+    def approach(self, h_inf, h_sup, dist=DistSurf, strict=False):
         h_inf_ = copy.deepcopy(h_inf)
         h_sup_ = copy.deepcopy(h_sup)
         h_inf_.error = [0, 0]
