@@ -324,7 +324,7 @@ def converge_point(val1, val2, case):
 	k_amp_ = case.KampSup.copy()
 	k_amp_[0] = val1
 	k_amp_[1] = val2
-	h_ = case.generate_1Hamiltonian(case.K, k_amp_, [case.omega0, case.Omega], symmetric=True)
+	h_ = case.generate_1Hamiltonian(case.K, k_amp_, case.Omega, symmetric=True)
 	return [int(case.converge(h_)), h_.count], h_.error
 
 def converge_region(case, tabs):
@@ -357,7 +357,7 @@ def converge_region(case, tabs):
 		fig = plt.figure()
 		ax = fig.gca()
 		ax.set_box_aspect(1)
-		im = ax.pcolor(x_vec, y_vec, xp.array(data)[:, 0].reshape((case.Ncs, case.Ncs)).astype(int), cmap='Reds_r')
+		im = ax.pcolormesh(x_vec, y_vec, xp.array(data)[:, 0].reshape((case.Ncs, case.Ncs)).astype(int), cmap='Reds_r', shading='nearest')
 		ax.set_xlim(case.KampInf[0], case.KampSup[0])
 		ax.set_ylim(case.KampInf[1], case.KampSup[1])
 		fig.colorbar(im)
