@@ -115,7 +115,7 @@ class RG:
             h.error = h_.error
             return False
 
-    def approach(self, h_inf, h_sup, dist=DistSurf, strict=False):
+    def approach(self, h_inf, h_sup, dist, strict=False):
         h_inf_ = copy.deepcopy(h_inf)
         h_sup_ = copy.deepcopy(h_sup)
         h_inf_.error = [0, 0]
