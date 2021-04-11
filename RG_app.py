@@ -347,7 +347,7 @@ def converge_region(case, tabs):
 			info.append(result_info)
 			progress2['value'] += 1
 			progress2.update()
-		save_data('RG_converge_region', data, timestr, case)
+		save_data('RG_converge_region', data, timestr, case, info)
 		progress2.destroy()
 		progress1['value'] += 1
 		progress1.update()
