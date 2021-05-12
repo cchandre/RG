@@ -53,7 +53,7 @@ def main():
 	case_types = 'Char', 'Char', 'Char', 'Char', 'Char', 'Char'
 	case_positions = (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0)
 	case_values = '[[1, 1], [1, 0]]', '[-0.618033988749895, 1.0]', '[1.0, 0.0]', '((0, 1, 0), (0, 1, 1))', '[0.0, 0.0]', '[0.04, 0.04]'
-	case_options = ('GoldenMean', 'Sqrt(2)', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
+	case_options = ('GoldenMean', 'SilverMean', 'BronzeMean', 'SpiralMean', 'TauMean', 'OMean', 'EtaMean')
 
 	param_rg_names = 'L', 'J', 'Sigma', 'Kappa', 'TolMin', 'TolMax', 'TolMinLie', 'MaxIter', 'MaxOA', 'NormAnalytic'
 	param_rg_types = 'Int', 'Int', 'Double', 'Double', 'Double', 'Double', 'Double', 'Int', 'Double', 'Double'
@@ -195,16 +195,24 @@ def define_case(case_option, params):
 	    	'omega0': [-0.618033988749895, 1.0],
 	    	'Omega': [1.0, 0.0],
 	    	'K': ((0, 1, 0), (0, 1, 1)),
-	    	'KampInf': [0.02, 0.02],
-	    	'KampSup': [0.04, 0.04]}
-	elif case_option == 'Sqrt(2)':
+	    	'KampInf': [0.0, 0.0],
+	    	'KampSup': [0.35, 0.12]}
+	elif case_option == 'SilverMean':
 		dict_params = {
-			'N': [[1, 1], [2, 1]],
-			'omega0': [-1.414213562373095, 1.0],
-			'Omega': [1.0, 1.0],
-			'K': ((0, 1, 1), (0, 0, 1)),
+			'N': [[2, 1], [1, 0]],
+			'omega0': [-0.414213562373095, 1.0],
+			'Omega': [1.0, 0.0],
+			'K': ((0, 1, 0), (0, 1, 1)),
 			'KampInf': [0.0, 0.0],
-			'KampSup': [0.02, 0.02]}
+			'KampSup': [0.12, 0.225]}
+	elif case_option == 'BronzeMean':
+		dict_params = {
+			'N': [[3, 1], [1, 0]],
+			'omega0': [-0.302775637731995, 1.0],
+			'Omega': [1.0, 0.0],
+			'K': ((0, 1, 0), (0, 1, 1)),
+			'KampInf': [0.0, 0.0],
+			'KampSup': [0.06, 0.2]}
 	elif case_option == 'SpiralMean':
 		sigma = 1.3247179572447460259
 		dict_params = {
