@@ -250,7 +250,7 @@ def define_case(case_option, params):
 	    	'KampInf': [0.0, 0.0, 0.0],
 	    	'KampSup': [0.1, 0.1, 0.1]}
 	for i, key in enumerate(dict_params):
-		params[i].set(key)
+		params[i].set(str(dict_params[key]))
 
 def iterates(case, tabs):
 	h_inf, h_sup = case.generate_2Hamiltonians()
