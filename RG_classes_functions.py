@@ -105,7 +105,7 @@ class RG:
         h_ = copy.deepcopy(h)
         h_.error = [0, 0]
         it_conv = 0
-        while (self.TolMax > self.norm_int(h_.f) > self.TolMin):
+        while (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (it_conv <= self.MaxNumConv):
             h_ = self.renormalization_group(h_)
             it_conv += 1
         if (self.norm_int(h_.f) <= self.TolMin):
