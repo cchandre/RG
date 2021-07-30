@@ -79,7 +79,7 @@ class RG:
             self.exp_nu = xp.exp(1j * nu_phi)
 
     def __repr__(self):
-        return '{self.__class__.name__}({self.DictParams})'.format(self=self)
+        return '{self.__class__.__name__}({self.DictParams})'.format(self=self)
 
     def __str__(self):
         return 'a {self.dim}-dimensional renormalization map with N = {self.N.tolist()}'.format(self=self)
