@@ -109,6 +109,7 @@ class RG:
             h_ = self.renormalization_group(h_)
             it_conv += 1
         if (self.norm_int(h_.f) <= self.TolMin):
+            h.count = - it_conv
             return True
         else:
             h.count = it_conv
