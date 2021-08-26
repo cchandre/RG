@@ -49,7 +49,7 @@ Iterates = 20
 
 Method = 'converge_region'
 #Method = 'critical_surface'
-Nxy = 32
+Nxy = 8
 DistSurf = 1e-7
 
 # N = [[1, 1], [1, 0]]
@@ -64,8 +64,8 @@ sigma = 1.3247179572447460259
 omega0 = [sigma**2, sigma, 1.0]
 Omega = [1, 1, -1]
 K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
-AmpInf = [0.03, 0.2, 0.1]
-AmpSup = [0.05, 0.25, 0.1]
+AmpInf = [0.2, 0.03, 0.1]
+AmpSup = [0.25, 0.05, 0.1]
 
 L = 5
 J = 5
