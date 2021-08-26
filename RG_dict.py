@@ -22,8 +22,8 @@
 ##   Kappa: float; definition of I-                                                                                   ##
 ##                                                                                                                    ##
 ##   CanonicalTransformation: 'Lie', 'Lie_scaling', 'Lie_adaptive'; method to compute the canonical Lie transforms    ##
-##   LieSteps: integer; number of steps in the scaling abd squaring procedure to compute exponentials                 ##
-##   MinStep: float; minimum value of the steps in the adaptive appraoch to compute exponentials                      ##
+##   LieSteps: integer; number of steps in the scaling and squaring procedure to compute exponentials                 ##
+##   MinStep: float; minimum value of the steps in the adaptive approach to compute exponentials                      ##
 ##   AbsTol: float; absolute tolerance for the adaptive approach to compute exponentials                              ##
 ##   RelTol: float; relative tolerance for the adaptive approach to compute exponentials                              ##
 ##                                                                                                                    ##
