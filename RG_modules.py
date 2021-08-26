@@ -132,23 +132,25 @@ def converge_region(case):
         fig.colorbar(im)
 
 def save_data(name, data, timestr, case, info=[]):
-	if case.SaveData:
-		mdic = case.DictParams.copy()
-		mdic.update({'data': data, 'info': info})
-		date_today = date.today().strftime(" %B %d, %Y\n")
-		mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
-		savemat(name + '_' + timestr + '.mat', mdic)
+    if case.SaveData:
+        mdic = case.DictParams.copy()
+        mdic.update({'data': data, 'info': info})
+        date_today = date.today().strftime(" %B %d, %Y\n")
+        mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
+        name_file = name + '_' + timestr + '.mat'
+        savemat(name_file, mdic)
+        print('\033[90m        Results saved in {} \033[00m'.format(name_file))
 
 def plotf(fun, case):
     if case.dim == 2 and case.PlotResults:
         fig, ax = plt.subplots(1,1)
-        ax.set_xlim(-case.L, case.L)
-        ax.set_ylim(-case.L, case.L)
-        ax.set_xlabel('$\nu_1$')
-        ax.set_ylabel('$\nu_2$')
         color_map = 'hot_r'
         im = ax.imshow(xp.abs(xp.roll(fun, (case.L, case.L), axis=(0,1))).transpose(), origin='lower', extent=[-case.L, case.L, -case.L, case.L], norm=colors.LogNorm(vmin=case.TolMin, vmax=xp.abs(fun).max()), cmap=color_map)
         fig.colorbar(im, orientation='vertical')
+        ax.set_xlim(-case.L, case.L)
+        ax.set_ylim(-case.L, case.L)
+        ax.set_xlabel('$k_1$')
+        ax.set_ylabel('$k_2$')
     elif case.dim == 3 and case.PlotResults:
         Y, Z = xp.meshgrid(xp.arange(-case.L, case.L+1), xp.arange(-case.L, case.L+1))
         X = xp.zeros_like(Y)

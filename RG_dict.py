@@ -44,10 +44,10 @@
 ########################################################################################################################
 import numpy as xp
 
-#Method = 'iterates'
-Iterates = 20
+Method = 'iterates'
+Iterates = 10
 
-Method = 'converge_region'
+#Method = 'converge_region'
 #Method = 'critical_surface'
 Nxy = 8
 DistSurf = 1e-7
