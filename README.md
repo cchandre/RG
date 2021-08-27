@@ -1,12 +1,12 @@
 # RG - Renormalization group for the break-up of invariant tori in Hamiltonian flows
 
-- **RG_dict.py**: to be edited to change the parameters of the RG computation (see below for a dictionary of parameters)
+- `RG_dict.py`: to be edited to change the parameters of the RG computation (see below for a dictionary of parameters)
 
-- **RG.py**: contains the RG classes and main functions defining the RG map
+- `RG.py`: contains the RG classes and main functions defining the RG map
 
-- **RG_modules**: contains the methods to execute the RG map
+- `RG_modules.py`: contains the methods to execute the RG map
 
-Once RG_dict.py has been edited with the relevant parameters, run the file as 
+Once `RG_dict.py` has been edited with the relevant parameters, run the file as 
 > `python3.8 RG.py`
 
 ___
