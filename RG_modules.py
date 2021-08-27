@@ -42,7 +42,7 @@ def iterates(case):
             h_inf = copy.deepcopy(h_inf_)
             h_sup = copy.deepcopy(h_sup_)
             print('\033[96m          diff = {:.3e}    delta = {:.7f}   <f2> = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff_p, delta_p, mean2_p, int(xp.rint(time.time()-start))))
-            save_data('RG_iterates', data, timestr, case, info='diff     delta     <f2>')
+            save_data('iterates', data, timestr, case, info='diff     delta     <f2>')
             plt.pause(0.5)
 
 def compute_cr(epsilon, case):
@@ -77,23 +77,23 @@ def critical_surface(case):
             result = compute_cr(epsilon, case)
             data.append(result)
     data = xp.array(data).transpose()
-    save_data('RG_critical_surface', data, timestr, case)
+    save_data('critical_surface', data, timestr, case)
     if case.PlotResults:
         fig, ax = plt.subplots(1, 1)
         ax.set_box_aspect(1)
-        plt.plot(data[0, :], data[1, :], color='b', linewidth=2)
+        ax.plot(data[0, :], data[1, :], color='b', linewidth=2)
         ax.set_xlim(case.AmpInf[0], case.AmpSup[0])
         ax.set_ylim(case.AmpInf[1], case.AmpSup[1])
         ax.set_xlabel('$\epsilon_1$')
         ax.set_ylabel('$\epsilon_2$')
 
-def converge_point(val1, val2, case):
+def point(val1, val2, case):
 	amp_ = case.AmpSup.copy()
 	amp_[0:2] = [val1, val2]
 	h_ = case.generate_1Hamiltonian(case.K, amp_, case.Omega, symmetric=True)
 	return [int(case.converge(h_)), h_.count], h_.error
 
-def converge_region(case):
+def region(case):
     print('\033[92m    {} -- converge_region \033[00m'.format(case.__str__()))
     timestr = time.strftime("%Y%m%d_%H%M")
     x_vec = xp.linspace(case.AmpInf[0], case.AmpSup[0], case.Nxy, dtype=case.Precision)
@@ -107,24 +107,24 @@ def converge_region(case):
             num_cores = min(multiprocess.cpu_count(), case.Parallelization[1])
         pool = multiprocess.Pool(num_cores)
         for y_ in tqdm(y_vec):
-            converge_point_ = lambda val1: converge_point(val1, val2=y_, case=case)
-            for result_data, result_info in tqdm(pool.imap(converge_point_, iterable=x_vec), leave=False):
+            point_ = lambda val1: point(val1, val2=y_, case=case)
+            for result_data, result_info in tqdm(pool.imap(point_, iterable=x_vec), leave=False):
                 data.append(result_data)
                 info.append(result_info)
-            save_data('RG_converge_region', data, timestr, case, info)
+            save_data('region', data, timestr, case, info)
     else:
         for y_ in tqdm(y_vec):
             for x_ in tqdm(x_vec, leave=False):
-                result_data, result_info = converge_point(x_, y_, case)
+                result_data, result_info = point(x_, y_, case)
                 data.append(result_data)
                 info.append(result_info)
-            save_data('RG_converge_region', data, timestr, case, info)
-    save_data('RG_converge_region', xp.array(data).reshape((case.Nxy, case.Nxy, 2)), timestr, case, info=xp.array(info).reshape((case.Nxy, case.Nxy)))
+            save_data('region', data, timestr, case, info)
+    save_data('region', xp.array(data).reshape((case.Nxy, case.Nxy, 2)), timestr, case, info=xp.array(info).reshape((case.Nxy, case.Nxy)))
     if case.PlotResults:
         divnorm = colors.TwoSlopeNorm(vmin=min(xp.array(data)[:, 1]), vcenter=0.0, vmax=max(xp.array(data)[:, 1]))
         fig, ax = plt.subplots(1, 1)
         ax.set_box_aspect(1)
-        im = ax.pcolormesh(x_vec, y_vec, xp.array(data)[:, 1].reshape((case.Nxy, case.Nxy)).astype(int), shading='nearest', norm=divnorm)
+        im = ax.pcolormesh(x_vec, y_vec, xp.array(data)[:, 1].reshape((case.Nxy, case.Nxy)).astype(int), norm=divnorm)
         ax.set_xlim(case.AmpInf[0], case.AmpSup[0])
         ax.set_ylim(case.AmpInf[1], case.AmpSup[1])
         ax.set_xlabel('$\epsilon_1$')
@@ -137,7 +137,7 @@ def save_data(name, data, timestr, case, info=[]):
         mdic.update({'data': data, 'info': info})
         date_today = date.today().strftime(" %B %d, %Y\n")
         mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
-        name_file = name + '_' + timestr + '.mat'
+        name_file = type(case).__name__ + '_' + name + '_' + timestr + '.mat'
         savemat(name_file, mdic)
         print('\033[90m        Results saved in {} \033[00m'.format(name_file))
 
