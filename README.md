@@ -1,6 +1,6 @@
 # RG - Renormalization group for the break-up of invariant tori in Hamiltonian flows
 
-- `RG_dict.py`: to be edited to change the parameters of the RG computation (see below for a dictionary of parameters)
+- [`RG_dict.py`](../blob/master/RG_dict.py): to be edited to change the parameters of the RG computation (see below for a dictionary of parameters)
 
 - `RG.py`: contains the RG classes and main functions defining the RG map
 
