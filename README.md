@@ -55,3 +55,18 @@ ___
 ####
 ---
 For more information: <cristel.chandre@univ-amu.fr>
+
+```bibtex
+@article{CHANDRE20021,
+  title = {Renormalization-group analysis for the transition to chaos in Hamiltonian systems},
+  journal = {Physics Reports},
+  volume = {365},
+  number = {1},
+  pages = {1-64},
+  year = {2002},
+  issn = {0370-1573},
+  doi = {https://doi.org/10.1016/S0370-1573(01)00094-1},
+  url = {https://www.sciencedirect.com/science/article/pii/S0370157301000941},
+  author = {C. Chandre and H.R. Jauslin},
+}
+```
