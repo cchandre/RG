@@ -51,7 +51,7 @@ ___
 ####
 - *SaveData*: boolean; if True, the results are saved in a `.mat` file 
 - *PlotResults*: boolean; if True, the results are plotted right after the computation
-- *Parallelization*: 2d array [boolean, int]; True for parallelization, int is the number of cores to be used (all of them: int='all')
+- *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used (all of them: int='all')
 ####
 ---
 
