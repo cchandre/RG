@@ -2,13 +2,13 @@
 ##                                   Definition of the parameters for RG                                              ##
 ########################################################################################################################
 ##                                                                                                                    ##
-##   Method: 'iterates', 'critical_surface', 'converge_region'; choice of method                                      ##
-##   Iterates: integer; number of iterates to compute in iterates()                                                   ##
-##   Nxy: integer; number of points in the (x,y) figures for 'critical_surface' and 'converge_region'                 ##
+##   Method: 'iterates', 'surface', 'region'; choice of method                                                        ##
+##   Iterates: integer; number of iterates to compute in 'iterates'                                                   ##
+##   Nxy: integer; number of points in the (x,y) figures for 'surface' and 'region'                                   ##
 ##   DistSurf: float; distance of approach for the computation of critical values                                     ##
 ##                                                                                                                    ##
 ##   N: nxn integer matrix with determinant ±1                                                                        ##
-##   omega0: array of n floats; frequency vector of the invariant torus; should be an eigenvector of N.transpose      ##
+##   omega0: array of n floats; frequency vector of the invariant torus; should be an eigenvector of N.transpose()    ##
 ##   Omega: array of n floats; vector of the perturation in action                                                    ##
 ##   K: tuples of integers; wavevectors of the perturbation                                                           ##
 ##   AmpInf: array of floats; minimal amplitudes of the perturbation                                                  ##
@@ -44,28 +44,28 @@
 ########################################################################################################################
 import numpy as xp
 
-Method = 'iterates'
+#Method = 'iterates'
 Iterates = 10
 
-#Method = 'converge_region'
-#Method = 'critical_surface'
-Nxy = 8
+Method = 'region'
+#Method = 'surface'
+Nxy = 16
 DistSurf = 1e-7
 
-# N = [[1, 1], [1, 0]]
-# omega0 = [(xp.sqrt(5)-1)/2, -1]
-# Omega = [1, 0]
-# K = ((0, 1, 0), (0, 1, 1))
-# AmpInf = [0, 0]
-# AmpSup = [0.04, 0.04]
+N = [[1, 1], [1, 0]]
+omega0 = [(xp.sqrt(5)-1)/2, -1]
+Omega = [1, 0]
+K = ((0, 1, 0), (0, 1, 1))
+AmpInf = [0, 0]
+AmpSup = [0.04, 0.04]
 
-N = [[0, 0, 1], [1, 0, 0], [0, 1, -1]]
-sigma = 1.3247179572447460259
-omega0 = [sigma**2, sigma, 1.0]
-Omega = [1, 1, -1]
-K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
-AmpInf = [0.2, 0.03, 0.1]
-AmpSup = [0.25, 0.05, 0.1]
+# N = [[0, 0, 1], [1, 0, 0], [0, 1, -1]]
+# sigma = 1.3247179572447460259
+# omega0 = [sigma**2, sigma, 1.0]
+# Omega = [1, 1, -1]
+# K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
+# AmpInf = [0.2, 0.03, 0.1]
+# AmpSup = [0.25, 0.05, 0.1]
 
 L = 5
 J = 5
@@ -98,7 +98,7 @@ Parallelization = [True, 4]
 ##                                                DO NOT EDIT BELOW                                                   ##
 ########################################################################################################################
 Precision = {32: xp.float32, 64: xp.float64, 128: xp.float128}.get(Precision, xp.float64)
-dict = {'Method': Method}
+dict = {'Method': 'compute_' + Method}
 dict.update({
         'Iterates': Iterates,
 		'Nxy': Nxy,

@@ -6,7 +6,7 @@ import copy
 import itertools
 import warnings
 warnings.filterwarnings("ignore")
-from RG_modules import iterates, converge_region, critical_surface
+from RG_modules import compute_iterates, compute_surface, compute_region
 from RG_dict import dict
 
 def main():
@@ -57,9 +57,9 @@ class RG:
         self.iminus = omega0_nu_ > comp_im
         self.nu_mask = xp.index_exp[:self.J+1]
         self.N_nu_mask = xp.index_exp[:self.J+1]
-        for it in range(self.dim):
-            self.nu_mask += (self.nu[it][mask],)
-            self.N_nu_mask += (N_nu[it][mask],)
+        for _ in range(self.dim):
+            self.nu_mask += (self.nu[_][mask],)
+            self.N_nu_mask += (N_nu[_][mask],)
         self.norm = {
             'sum': lambda h: xp.abs(h).sum(),
             'max': lambda h: xp.abs(h).max(),
@@ -73,30 +73,25 @@ class RG:
         fun3_ = sps.convolve(fun1_, fun2_, mode='full', method='auto')
         return xp.roll(fun3_[self.conv_dim], self.nL_, axis=self.axis_dim)
 
-    def generating_function(self, h):
+    def generate_y(self, h):
         y_ = xp.zeros_like(h.f)
-        ao2 = - h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_])
         y_[0][self.iminus[0]] = h.f[0][self.iminus[0]] / self.omega0_nu[0][self.iminus[0]]
         for m in range(1, self.J+1):
             y_[m][self.iminus[m]] = (h.f[m][self.iminus[m]] - 2.0 * h.f[2][self.zero_] * self.omega_nu[0][self.iminus[m]] * y_[m-1][self.iminus[m]]) / self.omega0_nu[0][self.iminus[m]]
-        y_t = xp.roll(y_ * self.J_, -1, axis=0)
-        y_o = self.omega_nu * y_
-        return [y_, ao2, y_t, y_o]
+        return [y_, -h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_]), xp.roll(y_ * self.J_, -1, axis=0), self.omega_nu * y_]
 
     def exp_ls(self, h, y, step):
         h_ = copy.deepcopy(h)
         h_.error = 0
-        y_ = [elt * step for elt in y]
-        f_t = xp.roll(h_.f * self.J_, -1, axis=0)
-        f_o = self.omega_nu * h_.f
-        sh_ = y_[1] * f_t - self.omega0_nu * y_[0] + self.conv_product(y_[2], f_o) - self.conv_product(y_[3], f_t)
+        y_ = [y_elt * step for y_elt in y]
+        f_d = [xp.roll(h_.f * self.J_, -1, axis=0), self.omega_nu * h_.f]
+        sh_ = y_[1] * f_d[0] - self.omega0_nu * y_[0] + self.conv_product(y_[2], f_d[1]) - self.conv_product(y_[3], f_d[0])
         sh_[xp.abs(sh_) < self.TolMin**2] = 0.0
         h_.f += sh_
         k_ = 2
-        while (self.TolMax > self.norm(sh_) > self.TolMinLie):
-            sh_t = xp.roll(sh_ * self.J_, -1, axis=0)
-            sh_o = self.omega_nu * sh_
-            sh_ = (y_[1] * sh_t + self.conv_product(y_[2], sh_o) - self.conv_product(y_[3], sh_t)) / self.Precision(k_)
+        while (self.TolMax > self.norm_int(sh_) > self.TolMinLie):
+            sh_d = [xp.roll(sh_ * self.J_, -1, axis=0), self.omega_nu * sh_]
+            sh_ = (y_[1] * sh_d[0] + self.conv_product(y_[2], sh_d[1]) - self.conv_product(y_[3], sh_d[0])) / self.Precision(k_)
             sh_[xp.abs(sh_) < self.TolMin**2] = 0.0
             h_.f += sh_
             k_ += 1
@@ -104,21 +99,20 @@ class RG:
                 h_.error = 1
         return h_
 
-    def exp_adaptive(self, h, y, step):
-        step_ = step
+    def exp_adapt(self, h, y, step):
         h_ = copy.deepcopy(h)
-        if step_ < self.MinStep:
+        if step < self.MinStep:
             h_.error = 5
-            return self.exp_ls(h_, y, step_)
-        h1 = self.exp_ls(h_, y, step_)
-        h2 = self.exp_ls(self.exp_ls(h_, y, 0.5 * step_), y, 0.5 * step_)
+            return self.exp_ls(h_, y, step)
+        h1 = self.exp_ls(h_, y, step)
+        h2 = self.exp_ls(self.exp_ls(h_, y, 0.5 * step), y, 0.5 * step)
         if self.norm_int(h1.f - h2.f) < self.AbsTol + self.RelTol * self.norm_int(h1.f):
             h_.f = 0.75 * h1.f + 0.25 * h2.f
             return h_
         else:
-            return self.exp_adaptive(self.exp_adaptive(h_, y, 0.5 * step_), y, 0.5 * step_)
+            return self.exp_adapt(self.exp_adapt(h_, y, 0.5 * step), y, 0.5 * step)
 
-    def renormalization_group(self, h):
+    def rg_map(self, h):
         h_ = copy.deepcopy(h)
         h_.error = 0
         omega_ = (self.N.transpose()).dot(h_.Omega)
@@ -128,24 +122,24 @@ class RG:
         f_ = xp.zeros_like(h_.f)
         f_[self.nu_mask] = h_.f[self.N_nu_mask].copy()
         h_.f = f_ * ren.reshape(self.r_j1)
-        km_ = 0
+        k_ = 0
         iminus_f = xp.zeros_like(h_.f)
         iminus_f[self.iminus] = h_.f[self.iminus].copy()
-        while (self.TolMax > self.norm(iminus_f) > self.TolMin) and (self.TolMax > self.norm(h_.f) > self.TolMin) and (km_ < self.MaxLie):
-            y = self.generating_function(h_)
+        while (self.TolMax > self.norm(iminus_f) > self.TolMin) and (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (k_ < self.MaxLie):
+            y = self.generate_y(h_)
             if self.CanonicalTransformation == 'Lie':
                 h_ = self.exp_ls(h_, y, 1.0)
             elif self.CanonicalTransformation == 'Lie_scaling':
                 for _ in itertools.repeat(None, self.LieSteps):
                     h_ = self.exp_ls(h_, y, 1.0 / self.Precision(self.LieSteps))
             elif self.CanonicalTransformation == 'Lie_adaptive':
-                    h_ = self.exp_adaptive(h_, y, 1.0)
+                    h_ = self.exp_adapt(h_, y, 1.0)
             iminus_f[self.iminus] = h_.f[self.iminus].copy()
-            km_ += 1
+            k_ += 1
             h_.f = self.sym(h_.f)
         if (self.norm(iminus_f) > self.TolMax):
             h_.error = 2
-        elif (km_ > self.MaxLie):
+        elif (k_ > self.MaxLie):
             h_.error = -2
         return h_
 
@@ -171,9 +165,9 @@ class RG:
         f_[2][self.zero_] = 0.5
         return self.Hamiltonian(omega, f_)
 
-    def generate_2Hamiltonians(self):
-        h_inf = self.generate_1Hamiltonian(self.K, self.AmpInf, self.Omega, symmetric=True)
-        h_sup = self.generate_1Hamiltonian(self.K, self.AmpSup, self.Omega, symmetric=True)
+    def generate_2Hamiltonians(self, amps):
+        h_inf = self.generate_1Hamiltonian(self.K, amps[0], self.Omega, symmetric=True)
+        h_sup = self.generate_1Hamiltonian(self.K, amps[1], self.Omega, symmetric=True)
         if not self.converge(h_inf):
             h_inf.error = 4
         if self.converge(h_sup):
@@ -195,10 +189,9 @@ class RG:
 
     def converge(self, h):
         h_ = copy.deepcopy(h)
-        h_.error = 0
-        it_conv = 0
+        h_.error, it_conv = 0, 0
         while (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (it_conv < self.MaxIterates):
-            h_ = self.renormalization_group(h_)
+            h_ = self.rg_map(h_)
             it_conv += 1
         if (self.norm_int(h_.f) < self.TolMin):
             h.count = - it_conv
@@ -208,12 +201,11 @@ class RG:
             h.error = h_.error
             return False
 
-    def approach(self, h_inf, h_sup, dist, strict=False):
-        h_inf_ = copy.deepcopy(h_inf)
-        h_sup_ = copy.deepcopy(h_sup)
+    def approach(self, h, dist, strict=False):
+        h_inf_, h_sup_ = copy.deepcopy((h[0], h[1]))
         h_inf_.error = 0
         h_mid_ = copy.deepcopy(h_inf_)
-        while self.norm(h_inf_.f - h_sup_.f) > dist:
+        while self.norm_int(h_inf_.f - h_sup_.f) > dist:
             h_mid_.f = (h_inf_.f + h_sup_.f) / 2.0
             if self.converge(h_mid_):
                 h_inf_.f = h_mid_.f.copy()

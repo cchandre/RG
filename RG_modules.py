@@ -18,29 +18,26 @@ plt.rcParams.update({
     'figure.figsize': [8, 8],
     'image.cmap': 'bwr'})
 
-def iterates(case):
+def compute_iterates(case):
     print('\033[92m    {} -- iterates \033[00m'.format(case.__str__()))
-    h_inf, h_sup = case.generate_2Hamiltonians()
+    h_inf, h_sup = case.generate_2Hamiltonians((case.AmpInf, case.AmpSup))
     if (h_inf.error == 0) and (h_sup.error == 0):
         timestr = time.strftime("%Y%m%d_%H%M")
-        plotf(h_sup.f[0], case)
-        data = []
-        k_ = 0
+        plot_fun(h_sup.f[0], case)
+        data, k_ = [], 0
         while (k_ < case.Iterates) and (h_inf.error == 0) and (h_sup.error == 0):
             k_ += 1
             start = time.time()
-            h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.DistSurf, strict=True)
-            h_inf_ = case.renormalization_group(h_inf)
-            h_sup_ = case.renormalization_group(h_sup)
+            h_inf, h_sup = case.approach((h_inf, h_sup), dist=case.DistSurf, strict=True)
+            h_inf_, h_sup_ = case.rg_map(h_inf), case.rg_map(h_sup)
             if k_ == 1:
                 print('\033[96m          Critical parameter = {} \033[00m'.format(2.0 * h_inf.f[case.K[0]]))
-            plotf(h_inf_.f[0], case)
+            plot_fun(h_inf_.f[0], case)
             mean2_p = 2.0 * h_inf.f[2][case.zero_]
             diff_p = case.norm(xp.abs(h_inf.f) - xp.abs(h_inf_.f))
             delta_p = case.norm(xp.abs(h_inf_.f) - xp.abs(h_sup_.f)) / case.norm(h_inf.f - h_sup.f)
             data.append([diff_p, delta_p, mean2_p])
-            h_inf = copy.deepcopy(h_inf_)
-            h_sup = copy.deepcopy(h_sup_)
+            h_inf, h_sup = copy.deepcopy((h_inf_, h_sup_))
             print('\033[96m          diff = {:.3e}    delta = {:.7f}   <f2> = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff_p, delta_p, mean2_p, int(xp.rint(time.time()-start))))
             save_data('iterates', data, timestr, case, info='diff     delta     <f2>')
             plt.pause(0.5)
@@ -48,18 +45,17 @@ def iterates(case):
 def compute_cr(epsilon, case):
 	[amp_inf_, amp_sup_] = [case.AmpInf, case.AmpSup].copy()
 	amp_inf_[0] = case.AmpInf[0] + epsilon * (case.AmpSup[0] - case.AmpInf[0])
-	amp_sup_[0] = amp_inf_[0]
+	amp_sup_[0] = amp_inf_[0].copy()
 	case_ = copy.deepcopy(case)
-	[case_.AmpInf, case_.AmpSup] = [amp_inf_, amp_sup_].copy()
-	h_inf, h_sup = case_.generate_2Hamiltonians()
+	h_inf, h_sup = case_.generate_2Hamiltonians((amp_inf_, amp_sup_))
 	if case.converge(h_inf) and (not case.converge(h_sup)):
-		h_inf, h_sup = case.approach(h_inf, h_sup, dist=case.DistSurf)
+		h_inf, h_sup = case.approach((h_inf, h_sup), dist=case.DistSurf)
 		return [2.0 * h_inf.f[case.K[0]], 2.0 * h_inf.f[case.K[1]]]
 	else:
 		return [2.0 * h_inf.f[case.K[0]], xp.nan]
 
-def critical_surface(case):
-    print('\033[92m    {} -- critical_surface \033[00m'.format(case.__str__()))
+def compute_surface(case):
+    print('\033[92m    {} -- surface \033[00m'.format(case.__str__()))
     timestr = time.strftime("%Y%m%d_%H%M")
     epsilon_ = xp.linspace(0.0, 1.0, case.Nxy, dtype=case.Precision)
     data = []
@@ -77,7 +73,7 @@ def critical_surface(case):
             result = compute_cr(epsilon, case)
             data.append(result)
     data = xp.array(data).transpose()
-    save_data('critical_surface', data, timestr, case)
+    save_data('surface', data, timestr, case)
     if case.PlotResults:
         fig, ax = plt.subplots(1, 1)
         ax.set_box_aspect(1)
@@ -87,34 +83,33 @@ def critical_surface(case):
         ax.set_xlabel('$\epsilon_1$')
         ax.set_ylabel('$\epsilon_2$')
 
-def point(val1, val2, case):
+def point(x, y, case):
 	amp_ = case.AmpSup.copy()
-	amp_[0:2] = [val1, val2]
+	amp_[0:2] = [x, y]
 	h_ = case.generate_1Hamiltonian(case.K, amp_, case.Omega, symmetric=True)
 	return [int(case.converge(h_)), h_.count], h_.error
 
-def region(case):
-    print('\033[92m    {} -- converge_region \033[00m'.format(case.__str__()))
+def compute_region(case):
+    print('\033[92m    {} -- region \033[00m'.format(case.__str__()))
     timestr = time.strftime("%Y%m%d_%H%M")
     x_vec = xp.linspace(case.AmpInf[0], case.AmpSup[0], case.Nxy, dtype=case.Precision)
     y_vec = xp.linspace(case.AmpInf[1], case.AmpSup[1], case.Nxy, dtype=case.Precision)
-    data = []
-    info = []
+    data, info = [], []
     if case.Parallelization[0]:
         if case.Parallelization[1] == 'all':
             num_cores = multiprocess.cpu_count()
         else:
             num_cores = min(multiprocess.cpu_count(), case.Parallelization[1])
         pool = multiprocess.Pool(num_cores)
-        for y_ in tqdm(y_vec):
-            point_ = lambda val1: point(val1, val2=y_, case=case)
-            for result_data, result_info in tqdm(pool.imap(point_, iterable=x_vec), leave=False):
+        for y_ in tqdm(y_vec, desc='y'):
+            point_ = lambda x_: point(x_, y=y_, case=case)
+            for result_data, result_info in tqdm(pool.imap(point_, iterable=x_vec), leave=False, desc='x'):
                 data.append(result_data)
                 info.append(result_info)
             save_data('region', data, timestr, case, info)
     else:
-        for y_ in tqdm(y_vec):
-            for x_ in tqdm(x_vec, leave=False):
+        for y_ in tqdm(y_vec, desc='y'):
+            for x_ in tqdm(x_vec, leave=False, desc='x'):
                 result_data, result_info = point(x_, y_, case)
                 data.append(result_data)
                 info.append(result_info)
@@ -141,7 +136,7 @@ def save_data(name, data, timestr, case, info=[]):
         savemat(name_file, mdic)
         print('\033[90m        Results saved in {} \033[00m'.format(name_file))
 
-def plotf(fun, case):
+def plot_fun(fun, case):
     if case.dim == 2 and case.PlotResults:
         fig, ax = plt.subplots(1,1)
         color_map = 'hot_r'
