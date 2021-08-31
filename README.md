@@ -14,9 +14,9 @@ python3.8 RG.py
 ___
 ##  Parameter dictionary
 
-- *Method*: 'iterates', 'critical_surface', 'converge_region'; choice of method
-- *Iterates*: integer; number of iterates to compute in `iterates()`
-- *Nxy*: integer; number of points in the (*x*,*y*) figures for `critical_surface()` and `converge_region()`
+- *Method*: 'iterates', 'surface', 'region'; choice of method
+- *Iterates*: integer; number of iterates to compute in `compute_iterates()`
+- *Nxy*: integer; number of points in the (*x*,*y*) figures for `compute_surface()` and `compute_region()`
 - *DistSurf*: float; distance of approach for the computation of critical values
 ####
 - *N*: *n*x*n* integer matrix with determinant ±1
