@@ -20,7 +20,7 @@ ___
 - *DistSurf*: float; distance of approach for the computation of critical values
 ####
 - *N*: *n*x*n* integer matrix with determinant ±1
-- *omega0*: array of *n* floats; frequency vector of the invariant torus; should be an eigenvector of *N*.transpose 
+- *omega0*: array of *n* floats; frequency vector of the invariant torus; should be an eigenvector of `N.transpose()` 
 - *Omega*: array of *n* floats; vector of the perturation in action
 - *K*: tuples of integers; wavevectors of the perturbation 
 - *AmpInf*: array of floats; minimal amplitudes of the perturbation 
@@ -54,7 +54,8 @@ ___
 - *Parallelization*: 2d array [boolean, int]; True for parallelization, int is the number of cores to be used (all of them: int='all')
 ####
 ---
-For more information: <cristel.chandre@univ-amu.fr>
+
+Reference: C. Chandre, H.R. Jauslin, *Renormalization-group analysis for the transition to chaos in Hamiltonian systems*, [Physics Reports](https://doi.org/10.1016/S0370-1573(01)00094-1) 365, 1 (2002)
 
 ```bibtex
 @article{CHANDRE20021,
@@ -70,3 +71,4 @@ For more information: <cristel.chandre@univ-amu.fr>
   author = {C. Chandre and H.R. Jauslin},
 }
 ```
+For more information: <cristel.chandre@univ-amu.fr>
