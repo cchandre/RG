@@ -22,9 +22,9 @@ ___
 - *N*: *n*x*n* integer matrix with determinant ±1
 - *omega0*: array of *n* floats; frequency vector of the invariant torus; should be an eigenvector of `N.transpose()` 
 - *Omega*: array of *n* floats; vector of the perturation in action
-- *K*: tuples of integers; wavevectors of the perturbation 
-- *AmpInf*: array of floats; minimal amplitudes of the perturbation 
-- *AmpSup*: array of floats; maximum amplitudes of the perturbation
+- *K*: 2-dimensional tuple of integers; wavevectors (j,k_1,...k_n) of the perturbation 
+- *AmpInf*: array of *len(K)* floats; minimal amplitudes of the perturbation 
+- *AmpSup*: array of *len(K)* floats; maximum amplitudes of the perturbation
 ####
 - *L*: integer; truncation in Fourier series (angles) 
 - *J*: integer; truncation in Taylor series  (actions) 
@@ -34,10 +34,10 @@ ___
 - *Kappa*: float; definition of *I-*
 ####
 - *CanonicalTransformation*: 'Lie', 'Lie_scaling', 'Lie_adaptive'; method to compute the canonical Lie transforms 
-- *LieSteps*: integer; number of steps in the scaling and squaring procedure to compute exponentials 
-- *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials 
-- *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials 
-- *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials
+- *LieSteps*: integer; number of steps in the scaling and squaring procedure to compute exponentials (for 'Lie_scaling')
+- *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials (for 'Lie_adaptive')
+- *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'Lie_adaptive')
+- *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials (for 'Lie_adaptive')
 ####
 - *TolMax*: float; value of Hamiltonian norm for divergence
 - *TolMin*: float; value of Hamiltonian norm for convergence 
