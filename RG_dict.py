@@ -58,7 +58,7 @@ NormAnalytic = 1
 Precision = 64
 
 SaveData = False
-PlotResults = False
+PlotResults = True
 Parallelization = (True, 4)
 
 ########################################################################################################################

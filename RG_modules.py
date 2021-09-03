@@ -55,15 +55,15 @@ def compute_cr(epsilon, case):
 
 def compute_line(case):
     print('\033[92m    {} -- line \033[00m'.format(case.__str__()))
-    amps_ = [case.CoordLine[_] * case.ModesLine * case.DirLine + (1 - case.ModesLine) * case.DirLine for _ in range(2)]
-    h_ = generate_2Hamiltonians(case, amps_)
-    if converge(case, h_[0]) and (not converge(case, h_[1])):
-        h_ = approach(case, h_, dist=case.DistSurf, display=True)
+    amps = [case.CoordLine[_] * case.ModesLine * case.DirLine + (1 - case.ModesLine) * case.DirLine for _ in range(2)]
+    h = generate_2Hamiltonians(case, amps)
+    if converge(case, h[0]) and (not converge(case, h[1])):
+        h = approach(case, h, dist=case.DistSurf, display=True)
 
 def compute_surface(case):
     print('\033[92m    {} -- surface \033[00m'.format(case.__str__()))
     timestr = time.strftime("%Y%m%d_%H%M")
-    epsilon_ = xp.linspace(0.0, 1.0, case.Nxy, dtype=case.Precision)
+    epsilon = xp.linspace(0.0, 1.0, case.Nxy, dtype=case.Precision)
     data = []
     if case.Parallelization[0]:
         if case.Parallelization[1] == 'all':
@@ -71,12 +71,12 @@ def compute_surface(case):
         else:
             num_cores = min(multiprocess.cpu_count(), case.Parallelization[1])
         pool = multiprocess.Pool(num_cores)
-        compfun = lambda epsilon: compute_cr(epsilon, case=case)
-        for result in tqdm(pool.imap(compfun, iterable=epsilon_)):
+        compfun = lambda _: compute_cr(_, case=case)
+        for result in tqdm(pool.imap(compfun, iterable=epsilon)):
             data.append(result)
     else:
-        for epsilon in tqdm(epsilon_):
-            result = compute_cr(epsilon, case)
+        for _ in tqdm(epsilon):
+            result = compute_cr(_, case)
             data.append(result)
     data = xp.array(data).transpose()
     save_data('surface', data, timestr, case)
@@ -113,9 +113,9 @@ def compute_region(case):
                 info.append(result_info)
             save_data('region', data, timestr, case, info)
     else:
-        for y_ in tqdm(y_vec, desc='y'):
-            for x_ in tqdm(x_vec, leave=False, desc='x'):
-                result_data, result_info = point(x_, y_, case)
+        for y in tqdm(y_vec, desc='y'):
+            for x in tqdm(x_vec, leave=False, desc='x'):
+                result_data, result_info = point(x, y, case)
                 data.append(result_data)
                 info.append(result_info)
             save_data('region', data, timestr, case, info)
@@ -203,8 +203,7 @@ def save_data(name, data, timestr, case, info=[]):
 def plot_fun(case, fun):
     if case.dim == 2 and case.PlotResults:
         fig, ax = plt.subplots(1,1)
-        color_map = 'hot_r'
-        im = ax.imshow(xp.abs(xp.roll(fun, (case.L, case.L), axis=(0,1))).transpose(), origin='lower', extent=[-case.L, case.L, -case.L, case.L], norm=colors.LogNorm(vmin=case.TolMin, vmax=xp.abs(fun).max()), cmap=color_map)
+        im = ax.imshow(xp.abs(xp.roll(fun, (case.L, case.L), axis=(0,1))).transpose(), origin='lower', extent=[-case.L, case.L, -case.L, case.L], norm=colors.LogNorm(vmin=case.TolMin, vmax=xp.abs(fun).max()), cmap='hot_r')
         fig.colorbar(im, orientation='vertical')
         ax.set_xlim(-case.L, case.L)
         ax.set_ylim(-case.L, case.L)

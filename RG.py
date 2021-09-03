@@ -61,11 +61,11 @@ class RG:
             self.nu_mask += (self.nu[_][mask],)
             self.N_nu_mask += (N_nu[_][mask],)
         self.norm = {
-            'sum': lambda h: xp.abs(h).sum(),
-            'max': lambda h: xp.abs(h).max(),
-            'Euclidean': lambda h: xp.sqrt((xp.abs(h) ** 2).sum()),
-            'Analytic': lambda h: xp.exp(xp.log(xp.abs(fun)) + self.NormAnalytic * xp.sum(xp.abs(self.nu), axis=0).reshape(self.r_1l)).max()
-            }.get(self.NormChoice, lambda h: xp.abs(h).sum())
+            'sum': lambda _: xp.abs(_).sum(),
+            'max': lambda _: xp.abs(_).max(),
+            'Euclidean': lambda _: xp.sqrt((xp.abs(_) ** 2).sum()),
+            'Analytic': lambda _: xp.exp(xp.log(xp.abs(_)) + self.NormAnalytic * xp.sum(xp.abs(self.nu), axis=0).reshape(self.r_1l)).max()
+            }.get(self.NormChoice, lambda _: xp.abs(_).sum())
 
     def conv_product(self, fun1, fun2):
         fun1_ = xp.roll(fun1, self.L_, axis=self.axis_dim)
@@ -143,6 +143,17 @@ class RG:
             h_.error = -2
         return h_
 
+    def norm_int(self, fun):
+        fun_ = fun.copy()
+        fun_[xp.index_exp[:self.J+1] + self.zero_] = 0.0
+        return self.norm(fun_)
+
+    def sym(self, fun):
+        fun_ = (fun + xp.roll(xp.flip(fun, axis=self.axis_dim), 1, axis=self.axis_dim).conj()) / 2.0
+        fun_[0][self.zero_] = 0.0
+        fun_[xp.abs(fun_) < self.TolMin**2] = 0.0
+        return fun_
+
     class Hamiltonian:
         def __repr__(self):
             return '{self.__class__.name__}({self.omega, self.f, self.error, self.count})'.format(self=self)
@@ -155,17 +166,6 @@ class RG:
             self.f = f
             self.error = error
             self.count = count
-
-    def norm_int(self, fun):
-        fun_ = fun.copy()
-        fun_[xp.index_exp[:self.J+1] + self.zero_] = 0.0
-        return self.norm(fun_)
-
-    def sym(self, fun):
-        fun_ = (fun + xp.roll(xp.flip(fun, axis=self.axis_dim), 1, axis=self.axis_dim).conj()) / 2.0
-        fun_[0][self.zero_] = 0.0
-        fun_[xp.abs(fun_) < self.TolMin**2] = 0.0
-        return fun_
 
 if __name__ == "__main__":
 	main()
