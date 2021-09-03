@@ -14,7 +14,7 @@ python3.8 RG.py
 ___
 ##  Parameter dictionary
 
-- *Method*: 'iterates', 'surface', 'region', 'critical_line'; choice of method
+- *Method*: 'iterates', 'surface', 'region', 'line'; choice of method
 - *Iterates*: integer; number of iterates to compute in `compute_iterates()`
 - *Nxy*: integer; number of points in the (*x*,*y*) figures for `compute_surface()` and `compute_region()`
 - *DistSurf*: float; distance of approach for the computation of critical values
@@ -25,9 +25,9 @@ ___
 - *K*: 2-dimensional tuple of integers; wavevectors (j,k_1,...k_n) of the perturbation 
 - *AmpInf*: array of *len(K)* floats; minimal amplitudes of the perturbation 
 - *AmpSup*: array of *len(K)* floats; maximum amplitudes of the perturbation
-- *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used in `compute_critical_line()`   
+- *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used in `compute_line()`   
 - *ModesLine*: tuple of 0 and 1; specify which modes are being varied (1 for a varied mode)     
-- *DirLine*: 1d array of floats; direction of the one-parameter family used in `compute_critical_line()` 
+- *DirLine*: 1d array of floats; direction of the one-parameter family used in `compute_line()` 
 ####
 - *L*: integer; truncation in Fourier series (angles) 
 - *J*: integer; truncation in Taylor series  (actions) 
