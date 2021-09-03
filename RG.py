@@ -156,26 +156,6 @@ class RG:
             self.error = error
             self.count = count
 
-    def generate_1Hamiltonian(self, ks, amps, omega, symmetric=False):
-        f_ = xp.zeros(self.r_jl, dtype=self.Precision)
-        for (k, amp) in zip(ks, amps):
-            f_[k] = amp
-        if symmetric:
-            f_ = self.sym(f_)
-        f_[2][self.zero_] = 0.5
-        return self.Hamiltonian(omega, f_)
-
-    def generate_2Hamiltonians(self, amps):
-        h_inf = self.generate_1Hamiltonian(self.K, amps[0], self.Omega, symmetric=True)
-        h_sup = self.generate_1Hamiltonian(self.K, amps[1], self.Omega, symmetric=True)
-        if not self.converge(h_inf):
-            h_inf.error = 4
-        if self.converge(h_sup):
-            h_sup.error = -4
-        else:
-            h_sup.error = 0
-        return h_inf, h_sup
-
     def norm_int(self, fun):
         fun_ = fun.copy()
         fun_[xp.index_exp[:self.J+1] + self.zero_] = 0.0
@@ -186,45 +166,6 @@ class RG:
         fun_[0][self.zero_] = 0.0
         fun_[xp.abs(fun_) < self.TolMin**2] = 0.0
         return fun_
-
-    def converge(self, h):
-        h_ = copy.deepcopy(h)
-        h_.error, it_conv = 0, 0
-        while (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (it_conv < self.MaxIterates):
-            h_ = self.rg_map(h_)
-            it_conv += 1
-        if (self.norm_int(h_.f) < self.TolMin):
-            h.count = - it_conv
-            return True
-        else:
-            h.count = it_conv
-            h.error = h_.error
-            return False
-
-    def approach(self, h, dist, strict=False, display=False):
-        h_inf_, h_sup_ = copy.deepcopy((h[0], h[1]))
-        h_inf_.error = 0
-        h_mid_ = copy.deepcopy(h_inf_)
-        while self.norm_int(h_inf_.f - h_sup_.f) > dist:
-            h_mid_.f = (h_inf_.f + h_sup_.f) / 2.0
-            if self.converge(h_mid_):
-                h_inf_.f = h_mid_.f.copy()
-            else:
-                h_sup_.f = h_mid_.f.copy()
-            if display:
-                print('\033[90m               [{:.6f}   {:.6f}] \033[00m'.format(2.0 * h_inf_.f[self.ModesK[0]], 2.0 * h_sup_.f[self.ModesK[0]]))
-        if display:
-            print('\033[96m          Critical parameters = {} \033[00m'.format([2.0 * h_inf_.f[self.K[_]] for _ in range(len(self.K))]))
-        if strict:
-            h_mid_.f = (h_inf_.f + h_sup_.f) / 2.0
-            delta_ = dist / self.norm(h_inf_.f - h_sup_.f)
-            h_sup_.f = h_mid_.f + delta_ * (h_sup_.f - h_mid_.f)
-            h_inf_.f = h_mid_.f + delta_ * (h_inf_.f - h_mid_.f)
-        if self.converge(h_sup_):
-            h_sup_.error = 3
-        else:
-            h_sup_.error = 0
-        return h_inf_, h_sup_
 
 if __name__ == "__main__":
 	main()
