@@ -7,28 +7,35 @@ import numpy as xp
 #Method = 'iterates'
 Iterates = 10
 
-Method = 'region'
+#Method = 'region'
 #Method = 'surface'
+Method = 'line'
 Nxy = 16
 DistSurf = 1e-7
 
-N = [[1, 1], [1, 0]]
-omega0 = [(xp.sqrt(5)-1)/2, -1]
-Omega = [1, 0]
-K = ((0, 1, 0), (0, 1, 1))
-AmpInf = [0, 0]
-AmpSup = [0.04, 0.04]
+# N = [[1, 1], [1, 0]]
+# omega0 = [(xp.sqrt(5)-1)/2, -1]
+# Omega = [1, 0]
+# K = ((0, 1, 0), (0, 1, 1))
+# AmpInf = [0, 0]
+# AmpSup = [0.04, 0.04]
+# CoordLine = [0.0, 0.028]
+# ModesLine = (1, 1)
+# DirLine = [1, 1]
 
-# N = [[0, 0, 1], [1, 0, 0], [0, 1, -1]]
-# sigma = 1.3247179572447460259
-# omega0 = [sigma**2, sigma, 1.0]
-# Omega = [1, 1, -1]
-# K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
-# AmpInf = [0.2, 0.03, 0.1]
-# AmpSup = [0.25, 0.05, 0.1]
+N = [[0, 1, 0], [0, 0, 1], [1, 0, -1]]
+sigma = 1.3247179572447460259
+omega0 = [sigma, sigma ** 2, 1.0]
+Omega = [1, 1, -1]
+K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
+AmpInf = [0.2, 0.03, 0.1]
+AmpSup = [0.25, 0.05, 0.1]
+CoordLine = [0.02, 0.05]
+ModesLine = (1, 1, 0)
+DirLine = [1, 5, 0.1]
 
-L = 5
-J = 5
+L = 10
+J = 10
 
 ChoiceIm = 'AK2000'
 Sigma = 0.6
@@ -51,7 +58,7 @@ NormAnalytic = 1
 Precision = 64
 
 SaveData = False
-PlotResults = True
+PlotResults = False
 Parallelization = (True, 4)
 
 ########################################################################################################################
@@ -67,8 +74,12 @@ dict.update({
 		'omega0': xp.asarray(omega0, dtype=Precision),
 		'Omega': xp.asarray(Omega, dtype=Precision),
 		'K': K,
+        'ModesK': [K[_] for _ in xp.nonzero(ModesLine==1)[0]],
 		'AmpInf': AmpInf,
 		'AmpSup': AmpSup,
+        'CoordLine': CoordLine,
+		'ModesLine': xp.asarray(ModesLine),
+		'DirLine': xp.asarray(DirLine),
 		'L': L,
 		'J': J,
 		'ChoiceIm': ChoiceIm,

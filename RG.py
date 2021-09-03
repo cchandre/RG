@@ -6,7 +6,7 @@ import copy
 import itertools
 import warnings
 warnings.filterwarnings("ignore")
-from RG_modules import compute_iterates, compute_surface, compute_region
+from RG_modules import compute_iterates, compute_surface, compute_region, compute_line
 from RG_dict import dict
 
 def main():
