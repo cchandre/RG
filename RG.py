@@ -201,7 +201,7 @@ class RG:
             h.error = h_.error
             return False
 
-    def approach(self, h, dist, strict=False):
+    def approach(self, h, dist, strict=False, display=False):
         h_inf_, h_sup_ = copy.deepcopy((h[0], h[1]))
         h_inf_.error = 0
         h_mid_ = copy.deepcopy(h_inf_)
@@ -211,6 +211,10 @@ class RG:
                 h_inf_.f = h_mid_.f.copy()
             else:
                 h_sup_.f = h_mid_.f.copy()
+            if display:
+                print('\033[90m               [{:.6f}   {:.6f}] \033[00m'.format(2.0 * h_inf_.f[self.ModesK[0]], 2.0 * h_sup_.f[self.ModesK[0]]))
+        if display:
+            print('\033[96m          Critical parameters = {} \033[00m'.format([2.0 * h_inf_.f[self.K[_]] for _ in range(len(self.K))]))
         if strict:
             h_mid_.f = (h_inf_.f + h_sup_.f) / 2.0
             delta_ = dist / self.norm(h_inf_.f - h_sup_.f)

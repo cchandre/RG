@@ -55,13 +55,12 @@ def compute_cr(epsilon, case):
 		return [2.0 * h_inf.f[case.ModesK[0]], xp.nan]
 
 def compute_line(case):
-    print('\033[92m    {} -- critical_line \033[00m'.format(case.__str__()))
+    print('\033[92m    {} -- line \033[00m'.format(case.__str__()))
     amp_inf_ = case.CoordLine[0] * case.ModesLine * case.DirLine + (1 - case.ModesLine) * case.DirLine
     amp_sup_ = case.CoordLine[1] * case.ModesLine * case.DirLine + (1 - case.ModesLine) * case.DirLine
     h_inf, h_sup = case.generate_2Hamiltonians((amp_inf_, amp_sup_))
     if case.converge(h_inf) and (not case.converge(h_sup)):
-        h_inf, h_sup = case.approach((h_inf, h_sup), dist=case.DistSurf)
-        print('\033[96m          Critical parameter = {} \033[00m'.format([2.0 * h_inf.f[case.K[_]] for _ in range(len(case.K))]))
+        h_inf, h_sup = case.approach((h_inf, h_sup), dist=case.DistSurf, display=True)
 
 def compute_surface(case):
     print('\033[92m    {} -- surface \033[00m'.format(case.__str__()))

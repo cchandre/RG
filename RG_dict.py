@@ -74,7 +74,7 @@ dict.update({
 		'omega0': xp.asarray(omega0, dtype=Precision),
 		'Omega': xp.asarray(Omega, dtype=Precision),
 		'K': K,
-        'ModesK': [K[_] for _ in xp.nonzero(ModesLine==1)[0]],
+        'ModesK': [K[_] for _ in xp.nonzero(ModesLine)[0]],
 		'AmpInf': AmpInf,
 		'AmpSup': AmpSup,
         'CoordLine': CoordLine,
