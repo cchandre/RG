@@ -20,24 +20,24 @@ plt.rcParams.update({
 
 def compute_iterates(case):
     print('\033[92m    {} -- iterates \033[00m'.format(case.__str__()))
-    h = generate_2Hamiltonians(case, (case.AmpInf, case.AmpSup))
-    if (h[0].error == 0) and (h[1].error == 0):
+    h_list = generate_2Hamiltonians(case, (case.AmpInf, case.AmpSup))
+    if (h_list[0].error == 0) and (h_list[1].error == 0):
         timestr = time.strftime("%Y%m%d_%H%M")
-        plot_fun(case, h[0].f[0])
+        plot_fun(case, h_list[1].f[0])
         data, k_ = [], 0
-        while (k_ < case.Iterates) and (h[0].error == 0) and (h[1].error == 0):
+        while (k_ < case.Iterates) and (h_list[0].error == 0) and (h_list[1].error == 0):
             k_ += 1
             start = time.time()
-            h = approach(case, h, dist=case.DistSurf, strict=True)
-            h_ = case.rg_map(h[0]), case.rg_map(h[1])
+            h_list = approach(case, h_list, dist=case.DistSurf, strict=True)
+            h_list_ = case.rg_map(h_list[0]), case.rg_map(h_list[1])
             if k_ == 1:
-                print('\033[96m          Critical parameter = {:.6f} \033[00m'.format(2.0 * h[0].f[case.ModesK[0]]))
-            plot_fun(case, h_[0].f[0])
-            mean2_p = 2.0 * h_[0].f[2][case.zero_]
-            diff_p = case.norm(xp.abs(h[0].f) - xp.abs(h_[0].f))
-            delta_p = case.norm(xp.abs(h_[0].f) - xp.abs(h_[1].f)) / case.norm(h[0].f - h[1].f)
+                print('\033[96m          Critical parameter = {:.6f} \033[00m'.format(2.0 * h_list[0].f[case.ModesK[0]]))
+            plot_fun(case, h_list_[0].f[0])
+            mean2_p = 2.0 * h_list_[0].f[2][case.zero_]
+            diff_p = case.norm(xp.abs(h_list[0].f) - xp.abs(h_list_[0].f))
+            delta_p = case.norm(xp.abs(h_list_[0].f) - xp.abs(h_list_[1].f)) / case.norm(h_list[0].f - h_list[1].f)
             data.append([diff_p, delta_p, mean2_p])
-            h = copy.deepcopy(h_)
+            h_list = copy.deepcopy(h_list_)
             print('\033[96m          diff = {:.3e}    delta = {:.7f}   <f2> = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff_p, delta_p, mean2_p, int(xp.rint(time.time()-start))))
             save_data('iterates', data, timestr, case, info='diff     delta     <f2>')
             plt.pause(0.5)
@@ -46,19 +46,20 @@ def compute_cr(epsilon, case):
 	[amp_inf_, amp_sup_] = [case.AmpInf, case.AmpSup].copy()
 	amp_inf_[0] = case.AmpInf[0] + epsilon * (case.AmpSup[0] - case.AmpInf[0])
 	amp_sup_[0] = amp_inf_[0].copy()
-	h = generate_2Hamiltonians(case, (amp_inf_, amp_sup_))
-	if converge(case, h[0]) and (not converge(case, h[1])):
-		h = approach(case, h, dist=case.DistSurf)
-		return [2.0 * h[0].f[_] for _ in case.ModesK]
+	h_list = generate_2Hamiltonians(case, (amp_inf_, amp_sup_))
+	if converge(case, h_list[0]) and (not converge(case, h_list[1])):
+		h_list = approach(case, h_list, dist=case.DistSurf)
+		return [2.0 * h_list[0].f[_] for _ in case.ModesK]
 	else:
-		return [2.0 * h[0].f[case.ModesK[0]], xp.nan]
+		return [2.0 * h_list[0].f[case.ModesK[0]], xp.nan]
 
 def compute_line(case):
     print('\033[92m    {} -- line \033[00m'.format(case.__str__()))
     amps = [case.CoordLine[_] * case.ModesLine * case.DirLine + (1 - case.ModesLine) * case.DirLine for _ in range(2)]
-    h = generate_2Hamiltonians(case, amps)
-    if converge(case, h[0]) and (not converge(case, h[1])):
-        h = approach(case, h, dist=case.DistSurf, display=True)
+    h_list = generate_2Hamiltonians(case, amps)
+    if converge(case, h_list[0]) and (not converge(case, h_list[1])):
+        h_list = approach(case, h_list, dist=case.DistSurf, display=True)
+    return h_list
 
 def compute_surface(case):
     print('\033[92m    {} -- surface \033[00m'.format(case.__str__()))
@@ -106,8 +107,8 @@ def compute_region(case):
         else:
             num_cores = min(multiprocess.cpu_count(), case.Parallelization[1])
         pool = multiprocess.Pool(num_cores)
-        for y_ in tqdm(y_vec, desc='y'):
-            point_ = lambda x_: point(x_, y=y_, case=case)
+        for y in tqdm(y_vec, desc='y'):
+            point_ = lambda _: point(_, y=y, case=case)
             for result_data, result_info in tqdm(pool.imap(point_, iterable=x_vec), leave=False, desc='x'):
                 data.append(result_data)
                 info.append(result_info)
@@ -141,14 +142,14 @@ def generate_1Hamiltonian(case, amps, symmetric=False):
     return case.Hamiltonian(case.Omega, f_)
 
 def generate_2Hamiltonians(case, amps):
-    h = [generate_1Hamiltonian(case, amps[_], symmetric=True) for _ in range(2)]
-    if not converge(case, h[0]):
-        h[0].error = 4
-    if converge(case, h[1]):
-        h[1].error = -4
+    h_list = [generate_1Hamiltonian(case, amps[_], symmetric=True) for _ in range(2)]
+    if not converge(case, h_list[0]):
+        h_list[0].error = 4
+    if converge(case, h_list[1]):
+        h_list[1].error = -4
     else:
-        h[1].error = 0
-    return h
+        h_list[1].error = 0
+    return h_list
 
 def converge(case, h):
     h_ = copy.deepcopy(h)
@@ -164,30 +165,30 @@ def converge(case, h):
         h.error = h_.error
         return False
 
-def approach(case, h, dist, strict=False, display=False):
-    h_ = copy.deepcopy(h)
-    h_[0].error = 0
-    h_mid = copy.deepcopy(h_[0])
-    while case.norm_int(h_[0].f - h_[1].f) > dist:
-        h_mid.f = (h_[0].f + h_[1].f) / 2.0
+def approach(case, h_list, dist, strict=False, display=False):
+    h_list_ = copy.deepcopy(h_list)
+    h_list_[0].error = 0
+    h_mid = copy.deepcopy(h_list_[0])
+    while case.norm_int(h_list_[0].f - h_list_[1].f) > dist:
+        h_mid.f = (h_list_[0].f + h_list_[1].f) / 2.0
         if converge(case, h_mid):
-            h_[0].f = h_mid.f.copy()
+            h_list_[0].f = h_mid.f.copy()
         else:
-            h_[1].f = h_mid.f.copy()
+            h_list_[1].f = h_mid.f.copy()
         if display:
-            print('\033[90m               [{:.6f}   {:.6f}] \033[00m'.format(2.0 * h_[0].f[case.ModesK[0]], 2.0 * h_[1].f[case.ModesK[0]]))
+            print('\033[90m               [{:.6f}   {:.6f}] \033[00m'.format(2.0 * h_list_[0].f[case.ModesK[0]], 2.0 * h_list_[1].f[case.ModesK[0]]))
     if display:
-        print('\033[96m          Critical parameters = {} \033[00m'.format([2.0 * h_[0].f[case.K[_]] for _ in range(len(case.K))]))
+        print('\033[96m          Critical parameters = {} \033[00m'.format([2.0 * h_list_[0].f[case.K[_]] for _ in range(len(case.K))]))
     if strict:
-        h_mid.f = (h_[0].f + h_[1].f) / 2.0
-        delta_ = dist / case.norm(h_[0].f - h_[1].f)
+        h_mid.f = (h_list_[0].f + h_list_[1].f) / 2.0
+        delta_ = dist / case.norm_int(h_list_[0].f - h_list_[1].f)
         for _ in range(2):
-            h_[_].f = h_mid.f + delta_ * (h_[_].f - h_mid.f)
-    if converge(case, h_[1]):
-        h_[1].error = 3
+            h_list_[_].f = h_mid.f + (h_list_[_].f - h_mid.f) * delta_
+    if converge(case, h_list_[1]):
+        h_list_[1].error = 3
     else:
-        h_[1].error = 0
-    return h_
+        h_list_[1].error = 0
+    return h_list_
 
 def save_data(name, data, timestr, case, info=[]):
     if case.SaveData:

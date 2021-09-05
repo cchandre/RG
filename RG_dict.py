@@ -4,10 +4,10 @@
 
 import numpy as xp
 
-#Method = 'iterates'
+Method = 'iterates'
 Iterates = 10
 
-Method = 'region'
+#Method = 'region'
 #Method = 'surface'
 #Method = 'line'
 Nxy = 64
