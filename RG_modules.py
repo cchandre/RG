@@ -39,8 +39,8 @@ def compute_iterates(case):
             data.append([diff_p, delta_p, mean2_p])
             h_list = copy.deepcopy(h_list_)
             print('\033[96m          diff = {:.3e}    delta = {:.7f}   <f2> = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff_p, delta_p, mean2_p, int(xp.rint(time.time()-start))))
-            save_data('iterates', data, timestr, case, info='diff     delta     <f2>')
             plt.pause(0.5)
+        save_data('iterates', data, timestr, case, info='diff     delta     <f2>', display=True)
 
 def compute_cr(epsilon, case):
 	[amp_inf_, amp_sup_] = [case.AmpInf, case.AmpSup].copy()
@@ -80,7 +80,7 @@ def compute_surface(case):
             result = compute_cr(_, case)
             data.append(result)
     data = xp.array(data).transpose()
-    save_data('surface', data, timestr, case)
+    save_data('surface', data, timestr, case, display=True)
     if case.PlotResults:
         fig, ax = plt.subplots(1, 1)
         ax.set_box_aspect(1)
@@ -120,7 +120,7 @@ def compute_region(case):
                 data.append(result_data)
                 info.append(result_info)
             save_data('region', data, timestr, case, info)
-    save_data('region', xp.array(data).reshape((case.Nxy, case.Nxy, 2)), timestr, case, info=xp.array(info).reshape((case.Nxy, case.Nxy)))
+    save_data('region', xp.array(data).reshape((case.Nxy, case.Nxy, 2)), timestr, case, info=xp.array(info).reshape((case.Nxy, case.Nxy)), display=True)
     if case.PlotResults:
         divnorm = colors.TwoSlopeNorm(vmin=min(xp.array(data)[:, 1]), vcenter=0.0, vmax=max(xp.array(data)[:, 1]))
         fig, ax = plt.subplots(1, 1)
@@ -190,7 +190,7 @@ def approach(case, h_list, dist, strict=False, display=False):
         h_list_[1].error = 0
     return h_list_
 
-def save_data(name, data, timestr, case, info=[]):
+def save_data(name, data, timestr, case, info=[], display=False):
     if case.SaveData:
         mdic = case.DictParams.copy()
         del mdic['Precision']
@@ -199,7 +199,8 @@ def save_data(name, data, timestr, case, info=[]):
         mdic.update({'date': date_today, 'author': 'cristel.chandre@univ-amu.fr'})
         name_file = type(case).__name__ + '_' + name + '_' + timestr + '.mat'
         savemat(name_file, mdic)
-        print('\033[90m        Results saved in {} \033[00m'.format(name_file))
+        if display:
+            print('\033[90m        Results saved in {} \033[00m'.format(name_file))
 
 def plot_fun(case, fun):
     if case.dim == 2 and case.PlotResults:

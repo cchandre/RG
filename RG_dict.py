@@ -4,13 +4,13 @@
 
 import numpy as xp
 
-Method = 'iterates'
+#Method = 'iterates'
 Iterates = 10
 
-#Method = 'region'
+Method = 'region'
 #Method = 'surface'
 #Method = 'line'
-Nxy = 64
+Nxy = 16
 DistSurf = 1e-7
 
 N = [[1, 1], [1, 0]]
@@ -57,7 +57,7 @@ NormChoice = 'sum'
 NormAnalytic = 1
 Precision = 64
 
-SaveData = False
+SaveData = True
 PlotResults = True
 Parallelization = (True, 4)
 
