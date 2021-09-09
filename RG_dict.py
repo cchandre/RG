@@ -10,29 +10,43 @@ Iterates = 10
 Method = 'region'
 #Method = 'surface'
 #Method = 'line'
-Nxy = 16
+Nxy = 64
 DistSurf = 1e-7
 
-N = [[1, 1], [1, 0]]
-omega0 = [(xp.sqrt(5)-1)/2, -1]
-Omega = [1, 0]
-K = ((0, 1, 0), (0, 1, 1))
-AmpInf = [0, 0]
-AmpSup = [0.04, 0.04]
-CoordLine = [0.0, 0.028]
-ModesLine = (1, 1)
-DirLine = [1, 1]
+## 2D -- golden mean
+# N = [[1, 1], [1, 0]]
+# omega0 = [(xp.sqrt(5)-1)/2, -1]
+# Omega = [1, 0]
+# K = ((0, 1, 0), (0, 1, 1))
+# AmpInf = [0, 0]
+# AmpSup = [0.04, 0.04]
+# CoordLine = [0.0, 0.028]
+# ModesLine = (1, 1)
+# DirLine = [1, 1]
 
+## 3D -- spiral mean
 # N = [[0, 1, 0], [0, 0, 1], [1, 0, -1]]
 # sigma = 1.3247179572447460259
 # omega0 = [sigma, sigma ** 2, 1.0]
 # Omega = [1, 1, -1]
 # K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
-# AmpInf = [0.2, 0.03, 0.1]
-# AmpSup = [0.25, 0.05, 0.1]
+# AmpInf = [0.0, 0.0, 0.1]
+# AmpSup = [0.15, 0.4, 0.1]
 # CoordLine = [0.02, 0.05]
 # ModesLine = (1, 1, 0)
 # DirLine = [1, 5, 0.1]
+
+## 3D -- tau mean
+N = [[0, 1, -1],[1, -1, 1],[0, -1, 2]]
+tau = 0.445041867912629
+omega0 = [1.0, tau, 1.0 - tau - tau**2]
+Omega = [1, 1, -1]
+K = ((0, 0, -1, 1), (0, 1, -1, -1), (0, 0, 0, 1))
+AmpInf = [0.0, 0.0, 0.01]
+AmpSup = [7e-4, 6e-3, 0.01]
+CoordLine = [0.0, 0.002]
+ModesLine = (1, 1, 0)
+DirLine = [1, 5, 0.01]
 
 L = 5
 J = 5
@@ -57,7 +71,7 @@ NormChoice = 'sum'
 NormAnalytic = 1
 Precision = 64
 
-SaveData = True
+SaveData = False
 PlotResults = True
 Parallelization = (True, 4)
 
