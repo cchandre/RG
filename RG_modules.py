@@ -112,14 +112,14 @@ def compute_region(case):
             for result_data, result_info in tqdm(pool.imap(point_, iterable=x_vec), leave=False, desc='x', total=len(x_vec)):
                 data.append(result_data)
                 info.append(result_info)
-            save_data('region', xp.array(data), timestr, case, xp.array(info))
+            save_data('region', xp.array(data).reshape((-1, case.Nxy, 2)), timestr, case, xp.array(info).reshape((-1, case.Nxy)))
     else:
         for y in tqdm(y_vec, desc='y'):
             for x in tqdm(x_vec, leave=False, desc='x'):
                 result_data, result_info = point(x, y, case)
                 data.append(result_data)
                 info.append(result_info)
-            save_data('region', xp.array(data), timestr, case, xp.array(info))
+            save_data('region', xp.array(data).reshape((-1, case.Nxy, 2)), timestr, case, xp.array(info).reshape((-1, case.Nxy)))
     save_data('region', xp.array(data).reshape((case.Nxy, case.Nxy, 2)), timestr, case, info=xp.array(info).reshape((case.Nxy, case.Nxy)), display=True)
     if case.PlotResults:
         divnorm = colors.TwoSlopeNorm(vmin=min(xp.array(data)[:, 1]), vcenter=0.0, vmax=max(xp.array(data)[:, 1]))
