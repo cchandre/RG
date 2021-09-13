@@ -109,7 +109,7 @@ def compute_region(case):
         pool = multiprocess.Pool(num_cores)
         for y in tqdm(y_vec, desc='y'):
             point_ = lambda _: point(_, y=y, case=case)
-            for result_data, result_info in tqdm(pool.imap(point_, iterable=x_vec), leave=False, desc='x'):
+            for result_data, result_info in tqdm(pool.imap(point_, iterable=x_vec), leave=False, desc='x', total=len(x_vec)):
                 data.append(result_data)
                 info.append(result_info)
             save_data('region', xp.array(data), timestr, case, xp.array(info))
