@@ -8,7 +8,7 @@
 
 Once [`RG_dict.py`](https://github.com/cchandre/RG/blob/main/RG_dict.py) has been edited with the relevant parameters, run the file as 
 ```sh
-python3.8 RG.py
+python3 RG.py
 ```
 
 ___
