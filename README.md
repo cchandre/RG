@@ -58,10 +58,10 @@ ___
 ####
 ---
 
-Reference: C. Chandre, H.R. Jauslin, *Renormalization-group analysis for the transition to chaos in Hamiltonian systems*, [Physics Reports](https://doi.org/10.1016/S0370-1573(01)00094-1) 365, 1 (2002)
-
+References: 
+- C. Chandre, H.R. Jauslin, *Renormalization-group analysis for the transition to chaos in Hamiltonian systems*, [Physics Reports](https://doi.org/10.1016/S0370-1573(01)00094-1) 365, 1 (2002)
 ```bibtex
-@article{CHANDRE20021,
+@article{chandre2002,
   title = {Renormalization-group analysis for the transition to chaos in Hamiltonian systems},
   journal = {Physics Reports},
   volume = {365},
@@ -72,6 +72,17 @@ Reference: C. Chandre, H.R. Jauslin, *Renormalization-group analysis for the tra
   doi = {https://doi.org/10.1016/S0370-1573(01)00094-1},
   url = {https://www.sciencedirect.com/science/article/pii/S0370157301000941},
   author = {C. Chandre and H.R. Jauslin},
+}
+```
+- A.P Bustamante, C. Chandre, *Numerical computation of critical surfaces for the breakup of invariant tori in Hamiltonian systems*, [arXiv:2109.12235](https://arxiv.org/abs/2109.12235)
+```bibtex
+@misc{bustamante2021,
+      title={Numerical computation of critical surfaces for the breakup of invariant tori in Hamiltonian systems}, 
+      author={Adrian P. Bustamante and Cristel Chandre},
+      year={2021},
+      eprint={2109.12235},
+      archivePrefix={arXiv},
+      primaryClass={math.DS}
 }
 ```
 For more information: <cristel.chandre@univ-amu.fr>
