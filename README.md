@@ -20,9 +20,9 @@ ___
 - *DistSurf*: float; distance of approach for the computation of critical values
 ####
 - *N*: *n*x*n* integer matrix with determinant ±1
-- *omega0*: array of *n* floats; frequency vector of the invariant torus; should be an eigenvector of `N.transpose()` 
-- *Omega*: array of *n* floats; vector of the perturation in action
-- *K*: 2-dimensional tuple of integers; wavevectors (j,k_1,...k_n) of the perturbation 
+- *omega0*: array of *n* floats; frequency vector **&omega;** of the invariant torus; should be an eigenvector of `N.transpose()` 
+- *Omega*: array of *n* floats; vector **&Omega;** of the perturation in action
+- *K*: 2-dimensional tuple of integers; wavevectors (j,k<sub>1</sub>,...,k<sub>n</sub>) of the perturbation 
 - *AmpInf*: array of *len(K)* floats; minimal amplitudes of the perturbation 
 - *AmpSup*: array of *len(K)* floats; maximum amplitudes of the perturbation
 - *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used in `compute_line()`   
@@ -32,9 +32,9 @@ ___
 - *L*: integer; truncation in Fourier series (angles) 
 - *J*: integer; truncation in Taylor series  (actions) 
 ####
-- *ChoiceIm*: 'AK2000', 'K1999', 'AKW1998'; definition of *I-* 
-- *Sigma*: float; definition of *I-*
-- *Kappa*: float; definition of *I-*
+- *ChoiceIm*: 'AK2000', 'K1999', 'AKW1998'; definition of *I<sup>-</sup>* 
+- *Sigma*: float; definition of *I<sup>-</sup>*
+- *Kappa*: float; definition of *I<sup>-</sup>*
 ####
 - *CanonicalTransformation*: 'Lie', 'Lie_scaling', 'Lie_adaptive'; method to compute the canonical Lie transforms 
 - *LieSteps*: integer; number of steps in the scaling and squaring procedure to compute exponentials (for 'Lie_scaling')
