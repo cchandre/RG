@@ -85,4 +85,4 @@ References:
       primaryClass = {math.DS}
 }
 ```
-For more information: <cristel.chandre@univ-amu.fr>
+For more information: <cristel.chandre@cnrs.fr>
