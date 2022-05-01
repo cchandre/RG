@@ -195,4 +195,4 @@ class RG:
             self.count = count
 
 if __name__ == "__main__":
-	main()
+    main()

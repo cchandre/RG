@@ -1,6 +1,6 @@
-########################################################################################################################
-##                              Dictionary of parameters: https://github.com/cchandre/RG                              ##
-########################################################################################################################
+##################################################################################################
+##               Dictionary of parameters: https://github.com/cchandre/RG                       ##
+##################################################################################################
 
 import numpy as xp
 
@@ -75,44 +75,44 @@ SaveData = True
 PlotResults = False
 Parallelization = (True, 64)
 
-########################################################################################################################
-##                                                DO NOT EDIT BELOW                                                   ##
-########################################################################################################################
+##################################################################################################
+##                              DO NOT EDIT BELOW                                               ##
+##################################################################################################
 Precision = {32: xp.float32, 64: xp.float64, 128: xp.float128}.get(Precision, xp.float64)
 dict = {'Method': 'compute_' + Method}
 dict.update({
         'Iterates': Iterates,
-		'Nxy': Nxy,
-		'DistSurf': DistSurf,
-		'N': xp.asarray(N, dtype=int),
-		'omega0': xp.asarray(omega0, dtype=Precision),
-		'Omega': xp.asarray(Omega, dtype=Precision),
-		'K': K,
+        'Nxy': Nxy,
+        'DistSurf': DistSurf,
+        'N': xp.asarray(N, dtype=int),
+        'omega0': xp.asarray(omega0, dtype=Precision),
+        'Omega': xp.asarray(Omega, dtype=Precision),
+        'K': K,
         'ModesK': [K[_] for _ in xp.nonzero(ModesLine)[0]],
-		'AmpInf': AmpInf,
-		'AmpSup': AmpSup,
+        'AmpInf': AmpInf,
+        'AmpSup': AmpSup,
         'CoordLine': CoordLine,
-		'ModesLine': xp.asarray(ModesLine),
-		'DirLine': xp.asarray(DirLine),
-		'L': L,
-		'J': J,
-		'ChoiceIm': ChoiceIm,
-		'Sigma': Sigma,
-		'Kappa': Kappa,
-		'CanonicalTransformation': CanonicalTransformation,
-		'LieSteps': LieSteps,
-		'MinStep': MinStep,
-		'AbsTol': AbsTol,
-		'RelTol': RelTol,
-		'TolMax': TolMax,
-		'TolMin': TolMin,
-		'TolMinLie': TolMinLie,
-		'MaxLie': MaxLie,
-		'MaxIterates': MaxIterates,
-		'NormChoice': NormChoice,
-		'NormAnalytic': NormAnalytic,
-		'Precision': Precision,
-		'SaveData': SaveData,
-		'PlotResults': PlotResults,
-		'Parallelization': Parallelization})
-########################################################################################################################
+        'ModesLine': xp.asarray(ModesLine),
+        'DirLine': xp.asarray(DirLine),
+        'L': L,
+        'J': J,
+        'ChoiceIm': ChoiceIm,
+        'Sigma': Sigma,
+        'Kappa': Kappa,
+        'CanonicalTransformation': CanonicalTransformation,
+        'LieSteps': LieSteps,
+        'MinStep': MinStep,
+        'AbsTol': AbsTol,
+        'RelTol': RelTol,
+        'TolMax': TolMax,
+        'TolMin': TolMin,
+        'TolMinLie': TolMinLie,
+        'MaxLie': MaxLie,
+        'MaxIterates': MaxIterates,
+        'NormChoice': NormChoice,
+        'NormAnalytic': NormAnalytic,
+        'Precision': Precision,
+        'SaveData': SaveData,
+        'PlotResults': PlotResults,
+        'Parallelization': Parallelization})
+##################################################################################################

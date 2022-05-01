@@ -70,15 +70,15 @@ def compute_iterates(case):
         save_data('iterates', data, timestr, case, info='diff     delta     <f2>', display=True)
 
 def compute_cr(epsilon, case):
-	[amp_inf_, amp_sup_] = [case.AmpInf, case.AmpSup].copy()
-	amp_inf_[0] = case.AmpInf[0] + epsilon * (case.AmpSup[0] - case.AmpInf[0])
-	amp_sup_[0] = amp_inf_[0].copy()
-	h_list = generate_2Hamiltonians(case, (amp_inf_, amp_sup_))
-	if converge(case, h_list[0]) and (not converge(case, h_list[1])):
-		h_list = approach(case, h_list, dist=case.DistSurf)
-		return [2.0 * h_list[0].f[_] for _ in case.ModesK]
-	else:
-		return [2.0 * h_list[0].f[case.ModesK[0]], xp.nan]
+    [amp_inf_, amp_sup_] = [case.AmpInf, case.AmpSup].copy()
+    amp_inf_[0] = case.AmpInf[0] + epsilon * (case.AmpSup[0] - case.AmpInf[0])
+    amp_sup_[0] = amp_inf_[0].copy()
+    h_list = generate_2Hamiltonians(case, (amp_inf_, amp_sup_))
+    if converge(case, h_list[0]) and (not converge(case, h_list[1])):
+        h_list = approach(case, h_list, dist=case.DistSurf)
+        return [2.0 * h_list[0].f[_] for _ in case.ModesK]
+    else:
+        return [2.0 * h_list[0].f[case.ModesK[0]], xp.nan]
 
 def compute_line(case):
     print('\033[92m    {} -- line \033[00m'.format(case.__str__()))
@@ -118,10 +118,10 @@ def compute_surface(case):
         ax.set_ylabel('$\epsilon_2$')
 
 def point(x, y, case):
-	amp = case.AmpSup.copy()
-	amp[0:2] = [x, y]
-	h = generate_1Hamiltonian(case, amp, symmetric=True)
-	return [int(converge(case, h)), h.count], h.error
+    amp = case.AmpSup.copy()
+    amp[0:2] = [x, y]
+    h = generate_1Hamiltonian(case, amp, symmetric=True)
+    return [int(converge(case, h)), h.count], h.error
 
 def compute_region(case):
     print('\033[92m    {} -- region \033[00m'.format(case.__str__()))
