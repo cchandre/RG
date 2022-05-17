@@ -36,16 +36,15 @@ ___
 - *Sigma*: float; definition of *I<sup>-</sup>*
 - *Kappa*: float; definition of *I<sup>-</sup>*
 ####
-- *CanonicalTransformation*: 'Lie', 'Lie_scaling', 'Lie_adaptive'; method to compute the canonical Lie transforms 
-- *LieSteps*: integer; number of steps in the scaling and squaring procedure to compute exponentials (for 'Lie_scaling')
-- *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials (for 'Lie_adaptive')
-- *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'Lie_adaptive')
-- *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials (for 'Lie_adaptive')
+- *CanonicalTransformation*: 'expm_onestep', 'expm_multiply', 'expm_adapt'; method to compute the canonical Lie transforms 
+- *TolMinLie*: float; value of norm for convergence of Lie transforms  (for 'expm_onestep')
+- *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials (for 'expm_adapt')
+- *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
+- *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
+- *MaxLie*: integer; maximum number of Lie transforms
 ####
 - *TolMax*: float; value of Hamiltonian norm for divergence
 - *TolMin*: float; value of Hamiltonian norm for convergence 
-- *TolMinLie*: float; value of norm for convergence of Lie transforms 
-- *MaxLie*: integer; maximum number of elements in Taylor series of exponentials
 - *MaxIterates*: integer; maximum number of iterates for convergence/divergence 
 ####
 - *Precision*: 32, 64 or 128; precision of calculations (default=64)
