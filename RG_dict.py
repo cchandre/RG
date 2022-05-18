@@ -4,37 +4,37 @@
 
 import numpy as xp
 
-#Method = 'iterates'
-Iterates = 10
+Method = 'iterates'
+Iterates = 30
 
-Method = 'region'
+#Method = 'region'
 #Method = 'surface'
 #Method = 'line'
 Nxy = 512
 DistSurf = 1e-7
 
 ## 2D -- golden mean
-# N = [[1, 1], [1, 0]]
-# omega0 = [(xp.sqrt(5)-1)/2, -1]
-# Omega = [1, 0]
-# K = ((0, 1, 0), (0, 1, 1))
-# AmpInf = [0, 0]
-# AmpSup = [0.04, 0.04]
-# CoordLine = [0.0, 0.028]
-# ModesLine = (1, 1)
-# DirLine = [1, 1]
+N = [[1, 1], [1, 0]]
+omega0 = [(xp.sqrt(5)-1)/2, -1]
+Omega = [1, 0]
+K = ((0, 1, 0), (0, 1, 1))
+AmpInf = [0, 0]
+AmpSup = [0.04, 0.04]
+CoordLine = [0.0, 0.028]
+ModesLine = (1, 1)
+DirLine = [1, 1]
 
 ## 3D -- spiral mean
-N = [[0, 1, 0], [0, 0, 1], [1, 0, -1]]
-sigma = 1.3247179572447460259
-omega0 = [sigma, sigma ** 2, 1.0]
-Omega = [1, 1, -1]
-K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
-AmpInf = [0.03, 0.2, 0.1]
-AmpSup = [0.05, 0.25, 0.1]
-CoordLine = [0.02, 0.05]
-ModesLine = (1, 1, 0)
-DirLine = [1, 5, 0.1]
+# N = [[0, 1, 0], [0, 0, 1], [1, 0, -1]]
+# sigma = 1.3247179572447460259
+# omega0 = [sigma, sigma ** 2, 1.0]
+# Omega = [1, 1, -1]
+# K = ((0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
+# AmpInf = [0.03, 0.2, 0.1]
+# AmpSup = [0.05, 0.25, 0.1]
+# CoordLine = [0.02, 0.05]
+# ModesLine = (1, 1, 0)
+# DirLine = [1, 5, 0.1]
 
 ## 3D -- tau mean
 # N = [[0, 1, -1],[1, -1, 1],[0, -1, 2]]
@@ -55,24 +55,24 @@ ChoiceIm = 'AK2000'
 Sigma = 0.6
 Kappa = 0.1
 
-CanonicalTransformation = 'expm_multiply'
+CanonicalTransformation = 'expm_onestep'
 TolMinLie = 1e-10
 MinStep = 0.05
 AbsTol = 1e-2
 RelTol = 1e-3
-MaxLie = 500
+MaxLie = 100
 
-TolMax = 1e+10
-TolMin = 1e-8
+TolMax = 1e+4
+TolMin = 1e-10
 MaxIterates = 100
 
 NormChoice = 'sum'
 NormAnalytic = 1
 Precision = 64
 
-SaveData = True
+SaveData = False
 PlotResults = False
-Parallelization = (True, 64)
+Parallelization = (False, 64)
 
 ##################################################################################################
 ##                              DO NOT EDIT BELOW                                               ##

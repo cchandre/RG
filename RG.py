@@ -26,7 +26,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as xp
-from numpy import linalg as LA
+import scipy.sparse.linalg as sla
+import scipy.linalg as la
 import matplotlib.pyplot as plt
 import scipy.signal as sps
 import copy
@@ -35,6 +36,7 @@ import warnings
 warnings.filterwarnings("ignore")
 from RG_modules import compute_iterates, compute_surface, compute_region, compute_line
 from RG_dict import dict
+import time
 
 def main():
     case = RG(dict)
@@ -61,17 +63,17 @@ class RG:
         self.r_jl = (self.J+1,) + self.dim * (2*self.L+1,)
         self.r_1l = (1,) + self.dim * (2*self.L+1,)
         self.r_j1 = (self.J+1,) + self.dim * (1,)
-        self.shape = xp.prod(xp.asarray(self.r_jl))
+        self.vecjl = xp.prod(xp.asarray(self.r_jl))
         self.conv_dim = xp.index_exp[:self.J+1] + self.dim * xp.index_exp[self.L:3*self.L+1]
         indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),)
         self.nu = xp.meshgrid(*indx, indexing='ij')
-        eigenval, w_eig = LA.eig(self.N.transpose())
+        eigenval, w_eig = la.eig(self.N.transpose())
         self.Eigenvalue = xp.real(eigenval[xp.abs(eigenval) < 1])
         N_nu = xp.sign(self.Eigenvalue).astype(int) * xp.einsum('ij,j...->i...', self.N, self.nu)
         self.omega0_nu = xp.einsum('i,i...->...', self.omega0, self.nu).reshape(self.r_1l)
         self.omega_nu = xp.einsum('i,i...->...', self.Omega, self.nu).reshape(self.r_1l)
         mask = xp.prod(abs(N_nu) <= self.L, axis=0, dtype=bool)
-        norm_nu = self.Precision(LA.norm(self.nu, axis=0)).reshape(self.r_1l)
+        norm_nu = self.Precision(la.norm(self.nu, axis=0)).reshape(self.r_1l)
         self.J_ = xp.arange(self.J+1, dtype=self.Precision).reshape(self.r_j1)
         self.derivs = lambda f: [xp.roll(f * self.J_, -1, axis=0), self.omega_nu * f]
         if self.ChoiceIm == 'AKW1998':
@@ -80,9 +82,9 @@ class RG:
             comp_im = xp.maximum(self.Sigma * xp.repeat(norm_nu, self.J+1, axis=0), self.Kappa * self.J_)
         else:
             w_nu = xp.einsum('ij,j...->i...', w_eig, self.nu)
-            norm_w_nu = LA.norm(w_nu, axis=0).reshape(self.r_1l)
+            norm_w_nu = la.norm(w_nu, axis=0).reshape(self.r_1l)
             comp_im = self.Sigma * xp.repeat(norm_w_nu, self.J+1, axis=0) + self.Kappa * self.J_
-        omega0_nu_ = xp.repeat(xp.abs(self.omega0_nu), self.J+1, axis=0) / LA.norm(self.omega0)
+        omega0_nu_ = xp.repeat(xp.abs(self.omega0_nu), self.J+1, axis=0) / la.norm(self.omega0)
         self.iminus = omega0_nu_ > comp_im
         self.nu_mask = xp.index_exp[:self.J+1]
         self.N_nu_mask = xp.index_exp[:self.J+1]
@@ -95,7 +97,7 @@ class RG:
             'Euclidean': lambda _: xp.sqrt((xp.abs(_) ** 2).sum()),
             'Analytic': lambda _: xp.exp(xp.log(xp.abs(_)) + self.NormAnalytic * xp.sum(xp.abs(self.nu), axis=0).reshape(self.r_1l)).max()
             }.get(self.NormChoice, lambda _: xp.abs(_).sum())
-        self._theta = {
+        self.theta = {
                     1: 2.29e-16, 2: 2.58e-8, 3: 1.39e-5, 4: 3.40e-4, 5: 2.40e-3,
                     6: 9.07e-3, 7: 2.38e-2, 8: 5.00e-2, 9: 8.96e-2, 10: 1.44e-1,
                     11: 2.14e-1, 12: 3.00e-1, 13: 4.00e-1, 14: 5.14e-1, 15: 6.41e-1,
@@ -117,75 +119,71 @@ class RG:
             y_[m][self.iminus[m]] = (h.f[m][self.iminus[m]] - 2.0 * h.f[2][self.zero_] * self.omega_nu[0][self.iminus[m]] * y_[m-1][self.iminus[m]]) / self.omega0_nu[0][self.iminus[m]]
         return y_, -h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_]), xp.roll(y_ * self.J_, -1, axis=0), self.omega_nu * y_
 
-    def L(self, y_, f):
-        f_ = f.reshape(self.r_jl)
-        f_d = self.derivs(f_)
-        return (y_[1] * f_d[0] - self.omega0_nu * y_[0] + self.conv_product(y_[2], f_d[1]) - self.conv_product(y_[3], f_d[0])).flatten()
+    def liouville(self, y_, f):
+        f_d = self.derivs(f.reshape(self.r_jl))
+        return y_[1] * f_d[0] + self.conv_product(y_[2], f_d[1]) - self.conv_product(y_[3], f_d[0])
 
-    def expm_onestep(self, h, y, step):
-        h_ = copy.deepcopy(h)
-        h_.error = 0
-        y_ = [y_elt * step for y_elt in y]
-        f_d = self.derivs(h_.f)
-        sh_ = y_[1] * f_d[0] - self.omega0_nu * y_[0] + self.conv_product(y_[2], f_d[1]) - self.conv_product(y_[3], f_d[0])
-        sh_[xp.abs(sh_) < self.TolMin**2] = 0.0
-        h_.f += sh_
-        k_ = 2
-        while (self.TolMax > self.norm_int(sh_) > self.TolMinLie):
-            sh_d = self.derivs(sh_)
-            sh_ = (y_[1] * sh_d[0] + self.conv_product(y_[2], sh_d[1]) - self.conv_product(y_[3], sh_d[0])) / self.Precision(k_)
-            sh_[xp.abs(sh_) < self.TolMin**2] = 0.0
-            h_.f += sh_
-            k_ += 1
-        if (self.norm(sh_) > self.TolMax):
-                h_.error = 1
-        return h_
+    def pnorm(self, y_, p=1):
+        Ls = lambda f: self.liouville(y_, f).flatten()
+        A = sla.LinearOperator(shape=(self.vecjl, self.vecjl), matvec=Ls, dtype=self.Precision)**p
+        # A = A.dot(xp.identity(A.shape[1]))
+        # return la.norm(A, ord=1)**(1/p)
+        return sla.onenormest(A)**(1/p)
 
     def expm_multiply(self, h, y):
         h_ = copy.deepcopy(h)
-        m_star, scale = self.fragment_3_1(y)
+        start = time.time()
+        m_star, scale = self.compute_m_s(y)
+        print([m_star, scale, time.time() - start])
         y_ = [elt / scale for elt in y]
         for s in range(scale):
-            f_d = self.derivs(h_.f)
-            sh_ = y_[1] * f_d[0] - self.omega0_nu * y_[0] + self.conv_product(y_[2], f_d[1]) - self.conv_product(y_[3], f_d[0])
+            sh_ = -self.omega0_nu * y_[0] + self.liouville(y_, h_.f)
             h_.f += sh_
             for _ in range(2, m_star+1):
-                sh_d = self.derivs(sh_)
-                sh_ = (y_[1] * sh_d[0] + self.conv_product(y_[2], sh_d[1]) - self.conv_product(y_[3], sh_d[0])) / self.Precision(_)
+                sh_ = self.liouville(y_, sh_) / self.Precision(_)
                 h_.f += sh_
         return h_
 
     def compute_p_max(self, m_max):
-        sqrt_m_max = np.sqrt(m_max)
-        p_low, p_high = int(np.floor(sqrt_m_max)), int(np.ceil(sqrt_m_max + 1))
-        return max(p for p in range(p_low, p_high+1) if p*(p-1) <= m_max + 1)
+        sqrt_m_max = xp.sqrt(m_max)
+        p_low, p_high = int(xp.floor(sqrt_m_max)), int(xp.ceil(sqrt_m_max + 1))
+        return max(p for p in range(p_low, p_high +1) if p * (p - 1) <= m_max + 1)
 
-    def condition_3_13(self, L_norm, n0, m_max, ell):
-        p_max = self._compute_p_max(m_max)
-        return L_norm <= 2 * ell * p_max * (p_max + 3) * self._theta[self.m_max] / float(n0 * self.m_max)
-
-    def fragment_3_1(self, y_, n0=1, tol=2**-53, m_max=55, ell=2):
-        if ell < 1:
-            raise ValueError('expected ell to be a positive integer')
+    def compute_m_s(self, y_, n0=1, tol=2**-53, m_max=55, ell=2):
         best_m, best_s = None, None
-        if self.condition_3_13(self.pnorm(y_), n0, m_max, ell):
-            for m, theta in self._theta.items():
-                s = int(np.ceil(self.pnorm(y_) / theta))
+        norm_ls = self.pnorm(y_)
+        p_max = self.compute_p_max(m_max)
+        if norm_ls <= 2 * ell * p_max * (p_max + 3) * self.theta[m_max] / float(n0 * m_max):
+            for m, theta in self.theta.items():
+                s = int(xp.ceil(norm_ls / theta))
                 if best_m is None or m * s < best_m * best_s:
                     best_m, best_s = m, s
         else:
-            for p in range(2, self.compute_p_max(m_max) + 1):
-                for m in range(p*(p-1)-1, m_max+1):
-                    if m in self._theta:
-                        s = int(np.ceil(self.pnorm(y_p) / self._theta[m]))
+            norm_d = xp.array([self.pnorm(y_, p) for p in range(2, p_max + 2)])
+            norm_alpha = xp.maximum(norm_d, xp.roll(norm_d, -1))
+            for p in range(2, p_max + 1):
+                for m in range(p * (p - 1) - 1, m_max + 1):
+                    if m in self.theta:
+                        s = int(xp.ceil(norm_alpha[p - 2] / self.theta[m]))
                         if best_m is None or m * s < best_m * best_s:
                             best_m, best_s = m, s
             best_s = max(best_s, 1)
         return best_m, best_s
 
-    def pnorm(self, y_, p=1):
-        Ls = lambda f: self.L(y_, f)
-        return LA.onenormest(LA.LinearOperator(shape=(self.shape, self.shape), matvec=Ls)**p)**(1/p)
+    def expm_onestep(self, h, y, step):
+        h_ = copy.deepcopy(h)
+        h_.error = 0
+        y_ = [y_elt * step for y_elt in y]
+        sh_ = -self.omega0_nu * y_[0] + self.liouville(y_, h_.f)
+        h_.f += sh_
+        k_ = 2
+        while (self.TolMax > self.norm_int(sh_) > self.TolMinLie):
+            sh_ = self.liouville(y_, sh_) / self.Precision(k_)
+            h_.f += sh_
+            k_ += 1
+        if (self.norm(sh_) > self.TolMax):
+                h_.error = 1
+        return h_
 
     def expm_adapt(self, h, y, step):
         h_ = copy.deepcopy(h)
@@ -193,7 +191,7 @@ class RG:
             h_.error = 5
             return self.expm_onestep(h_, y, step)
         h1 = self.expm_onestep(h_, y, step)
-        h2 = self.expm_onestep(self.exp_ls(h_, y, 0.5 * step), y, 0.5 * step)
+        h2 = self.expm_onestep(self.expm_onestep(h_, y, 0.5 * step), y, 0.5 * step)
         if self.norm_int(h1.f - h2.f) < self.AbsTol + self.RelTol * self.norm_int(h1.f):
             h_.f = 0.75 * h1.f + 0.25 * h2.f
             return h_
@@ -204,8 +202,8 @@ class RG:
         h_ = copy.deepcopy(h)
         h_.error = 0
         omega_ = (self.N.transpose()).dot(h_.Omega)
-        ren = (2.0 * LA.norm(omega_) / self.Eigenvalue * h_.f[2][self.zero_]) ** (2 - xp.arange(self.J+1, dtype=int)) / (2.0 * h_.f[2][self.zero_])
-        h_.Omega = omega_ / LA.norm(omega_)
+        ren = (2.0 * la.norm(omega_) / self.Eigenvalue * h_.f[2][self.zero_]) ** (2 - xp.arange(self.J+1, dtype=int)) / (2.0 * h_.f[2][self.zero_])
+        h_.Omega = omega_ / la.norm(omega_)
         self.omega_nu = xp.einsum('i,i...->...', h_.Omega, self.nu).reshape(self.r_1l)
         f_ = xp.zeros_like(h_.f)
         f_[self.nu_mask] = h_.f[self.N_nu_mask].copy()
@@ -216,7 +214,7 @@ class RG:
         while (self.TolMax > self.norm(iminus_f) > self.TolMin) and (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (k_ < self.MaxLie):
             y = self.generate_y(h_)
             if self.CanonicalTransformation == 'expm_onestep':
-                h_ = self.exp_onestep(h_, y, 1.0)
+                h_ = self.expm_onestep(h_, y, 1.0)
             elif self.CanonicalTransformation == 'expm_multiply':
                 h_ = self.expm_multiply(h_, y)
             elif self.CanonicalTransformation == 'expm_adapt':
@@ -246,7 +244,7 @@ class RG:
             return '{self.__class__.name__}({self.omega, self.f, self.error, self.count})'.format(self=self)
 
         def __str__(self):
-            return 'a {self.__class__.name__} in action-angle variables'.format(self=self)
+            return 'A {self.__class__.name__} in action-angle variables'.format(self=self)
 
         def __init__(self, omega, f, error=0, count=0):
             self.Omega = omega
