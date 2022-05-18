@@ -125,23 +125,33 @@ class RG:
 
     def pnorm(self, y_, p=1):
         Ls = lambda f: self.liouville(y_, f).flatten()
-        A = sla.LinearOperator(shape=(self.vecjl, self.vecjl), matvec=Ls, dtype=self.Precision)**p
+		Ls_H = lambda f: -self.liouville(y_, f).flatten()
+        A = sla.LinearOperator(shape=(self.vecjl, self.vecjl), matvec=Ls, rmatvec=Ls_H, dtype=self.Precision)**p
         # A = A.dot(xp.identity(A.shape[1]))
         # return la.norm(A, ord=1)**(1/p)
         return sla.onenormest(A)**(1/p)
 
-    def expm_multiply(self, h, y):
+    def expm_multiply(self, h, y, tol=2**-53):
         h_ = copy.deepcopy(h)
+		h_.error = 0
         start = time.time()
         m_star, scale = self.compute_m_s(y)
         print([m_star, scale, time.time() - start])
-        y_ = [elt / scale for elt in y]
+        y_ = [item / scale for item in y]
         for s in range(scale):
             sh_ = -self.omega0_nu * y_[0] + self.liouville(y_, h_.f)
             h_.f += sh_
-            for _ in range(2, m_star+1):
-                sh_ = self.liouville(y_, sh_) / self.Precision(_)
+			c1 = self.norm_int(sh_)
+            for m in range(2, m_star+1):
+                sh_ = self.liouville(y_, sh_) / self.Precision(m)
+				c2 = self.norm_int(sh_)
                 h_.f += sh_
+				if c1 + c2 <= tol * self.norm_int(h_.f):
+					break
+				elif c1 + c2 >= self.TolMax:
+					h_.error = 1
+					break
+				c1 = c2
         return h_
 
     def compute_p_max(self, m_max):
@@ -170,19 +180,25 @@ class RG:
             best_s = max(best_s, 1)
         return best_m, best_s
 
-    def expm_onestep(self, h, y, step):
+    def expm_onestep(self, h, y, step, tol=2**-53):
         h_ = copy.deepcopy(h)
         h_.error = 0
-        y_ = [y_elt * step for y_elt in y]
+        y_ = [item * step for item in y]
         sh_ = -self.omega0_nu * y_[0] + self.liouville(y_, h_.f)
         h_.f += sh_
-        k_ = 2
-        while (self.TolMax > self.norm_int(sh_) > self.TolMinLie):
-            sh_ = self.liouville(y_, sh_) / self.Precision(k_)
+        m = 2
+		c1 = self.norm_int(sh_)
+        while True:
+            sh_ = self.liouville(y_, sh_) / self.Precision(m)
+			c2 = self.norm_int(sh_)
             h_.f += sh_
-            k_ += 1
-        if (self.norm(sh_) > self.TolMax):
-                h_.error = 1
+			if c1 + c2 <= tol * self.norm_int(h_.f):
+				break
+			elif c1 + c2 >= self.TolMax:
+				h_.error = 1
+				break
+			c1 = c2
+            m += 1
         return h_
 
     def expm_adapt(self, h, y, step):
