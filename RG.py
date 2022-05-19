@@ -117,7 +117,7 @@ class RG:
         y_[0][self.iminus[0]] = h.f[0][self.iminus[0]] / self.omega0_nu[0][self.iminus[0]]
         for m in range(1, self.J+1):
             y_[m][self.iminus[m]] = (h.f[m][self.iminus[m]] - 2.0 * h.f[2][self.zero_] * self.omega_nu[0][self.iminus[m]] * y_[m-1][self.iminus[m]]) / self.omega0_nu[0][self.iminus[m]]
-        return y_, -h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_]), xp.roll(y_ * self.J_, -1, axis=0), self.omega_nu * y_
+        return y_, -h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_]), xp.roll(y_ * self.J_, -1, axis=0), self.omega_nu * y_, -self.omega0_nu * y_
 
     def liouville(self, y, f):
         f_ = self.derivs(f.reshape(self.r_jl))
@@ -135,7 +135,7 @@ class RG:
         m_star, scale = self.compute_m_s(y)
         y_ = [item / scale for item in y]
         for s in range(scale):
-            sh_ = -self.omega0_nu * y_[0] + self.liouville(y_, h_.f)
+            sh_ = y_[4] + self.liouville(y_, h_.f)
             h_.f += sh_
             c1 = self.norm_int(sh_)
             for m in range(2, m_star+1):
@@ -176,11 +176,11 @@ class RG:
             best_s = max(best_s, 1)
         return best_m, best_s
 
-    def expm_onestep(self, h, y, step, tol=2**-53):
+    def expm_onestep(self, h, y, step=1, tol=2**-53):
         h_ = copy.deepcopy(h)
         h_.error = 0
         y_ = [item * step for item in y]
-        sh_ = -self.omega0_nu * y_[0] + self.liouville(y_, h_.f)
+        sh_ = y_[4] + self.liouville(y_, h_.f)
         h_.f += sh_
         m = 2
         c1 = self.norm_int(sh_)
@@ -197,7 +197,7 @@ class RG:
             m += 1
         return h_
 
-    def expm_adapt(self, h, y, step):
+    def expm_adapt(self, h, y, step=1):
         h_ = copy.deepcopy(h)
         if step < self.MinStep:
             h_.error = 5
@@ -226,11 +226,11 @@ class RG:
         while (self.TolMax > self.norm(iminus_f) > self.TolMin) and (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (k_ < self.MaxLie):
             y = self.generate_y(h_)
             if self.CanonicalTransformation == 'expm_onestep':
-                h_ = self.expm_onestep(h_, y, 1.0)
+                h_ = self.expm_onestep(h_, y)
+            elif self.CanonicalTransformation == 'expm_adapt':
+                h_ = self.expm_adapt(h_, y)
             elif self.CanonicalTransformation == 'expm_multiply':
                 h_ = self.expm_multiply(h_, y)
-            elif self.CanonicalTransformation == 'expm_adapt':
-                h_ = self.expm_adapt(h_, y, 1.0)
             iminus_f[self.iminus] = h_.f[self.iminus].copy()
             k_ += 1
             h_.f = self.sym(h_.f)

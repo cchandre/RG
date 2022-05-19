@@ -55,8 +55,7 @@ ChoiceIm = 'AK2000'
 Sigma = 0.6
 Kappa = 0.1
 
-CanonicalTransformation = 'expm_multiply'
-TolMinLie = 1e-10
+CanonicalTransformation = 'expm_adapt'
 MinStep = 0.05
 AbsTol = 1e-2
 RelTol = 1e-3
@@ -99,7 +98,6 @@ dict.update({
         'Sigma': Sigma,
         'Kappa': Kappa,
         'CanonicalTransformation': CanonicalTransformation,
-        'TolMinLie': TolMinLie,
         'MinStep': MinStep,
         'AbsTol': AbsTol,
         'RelTol': RelTol,
