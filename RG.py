@@ -113,11 +113,11 @@ class RG:
         return xp.roll(fun3_[self.conv_dim], self.nL_, axis=self.axis_dim)
 
     def generate_y(self, h):
-        y_ = xp.zeros_like(h.f)
-        y_[0][self.iminus[0]] = h.f[0][self.iminus[0]] / self.omega0_nu[0][self.iminus[0]]
+        y = xp.zeros_like(h.f)
+        y[0][self.iminus[0]] = h.f[0][self.iminus[0]] / self.omega0_nu[0][self.iminus[0]]
         for m in range(1, self.J+1):
-            y_[m][self.iminus[m]] = (h.f[m][self.iminus[m]] - 2.0 * h.f[2][self.zero_] * self.omega_nu[0][self.iminus[m]] * y_[m-1][self.iminus[m]]) / self.omega0_nu[0][self.iminus[m]]
-        return y_, -h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_]), xp.roll(y_ * self.J_, -1, axis=0), self.omega_nu * y_, -self.omega0_nu * y_
+            y[m][self.iminus[m]] = (h.f[m][self.iminus[m]] - 2.0 * h.f[2][self.zero_] * self.omega_nu[0][self.iminus[m]] * y[m-1][self.iminus[m]]) / self.omega0_nu[0][self.iminus[m]]
+        return y, -h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_]), xp.roll(y * self.J_, -1, axis=0), self.omega_nu * y, -self.omega0_nu * y
 
     def liouville(self, y, f):
         f_ = self.derivs(f.reshape(self.r_jl))
@@ -135,13 +135,13 @@ class RG:
         m_star, scale = self.compute_m_s(y)
         y_ = [item / scale for item in y]
         for s in range(scale):
-            sh_ = y_[4] + self.liouville(y_, h_.f)
-            h_.f += sh_
-            c1 = self.norm_int(sh_)
+            sh = y_[4] + self.liouville(y_, h_.f)
+            h_.f += sh
+            c1 = self.norm_int(sh)
             for m in range(2, m_star+1):
-                sh_ = self.liouville(y_, sh_) / self.Precision(m)
-                c2 = self.norm_int(sh_)
-                h_.f += sh_
+                sh = self.liouville(y_, sh) / self.Precision(m)
+                c2 = self.norm_int(sh)
+                h_.f += sh
                 if c1 + c2 <= tol * self.norm_int(h_.f):
                     break
                 elif c1 + c2 >= self.TolMax:
@@ -155,9 +155,9 @@ class RG:
         p_low, p_high = int(xp.floor(sqrt_m_max)), int(xp.ceil(sqrt_m_max + 1))
         return max(p for p in range(p_low, p_high +1) if p * (p - 1) <= m_max + 1)
 
-    def compute_m_s(self, y_, n0=1, tol=2**-53, m_max=55, ell=2):
+    def compute_m_s(self, y, n0=1, tol=2**-53, m_max=55, ell=2):
         best_m, best_s = None, None
-        norm_ls = self.pnorm(y_)
+        norm_ls = self.pnorm(y)
         p_max = self.compute_p_max(m_max)
         if norm_ls <= 2 * ell * p_max * (p_max + 3) * self.theta[m_max] / float(n0 * m_max):
             for m, theta in self.theta.items():
@@ -165,7 +165,7 @@ class RG:
                 if best_m is None or m * s < best_m * best_s:
                     best_m, best_s = m, s
         else:
-            norm_d = xp.array([self.pnorm(y_, p) for p in range(2, p_max + 2)])
+            norm_d = xp.array([self.pnorm(y, p) for p in range(2, p_max + 2)])
             norm_alpha = xp.maximum(norm_d, xp.roll(norm_d, -1))
             for p in range(2, p_max + 1):
                 for m in range(p * (p - 1) - 1, m_max + 1):
@@ -180,14 +180,14 @@ class RG:
         h_ = copy.deepcopy(h)
         h_.error = 0
         y_ = [item * step for item in y]
-        sh_ = y_[4] + self.liouville(y_, h_.f)
-        h_.f += sh_
+        sh = y_[4] + self.liouville(y_, h_.f)
+        h_.f += sh
         m = 2
-        c1 = self.norm_int(sh_)
+        c1 = self.norm_int(sh)
         while True:
-            sh_ = self.liouville(y_, sh_) / self.Precision(m)
-            c2 = self.norm_int(sh_)
-            h_.f += sh_
+            sh = self.liouville(y_, sh) / self.Precision(m)
+            c2 = self.norm_int(sh)
+            h_.f += sh
             if c1 + c2 <= tol * self.norm_int(h_.f):
                 break
             elif c1 + c2 >= self.TolMax:
@@ -220,10 +220,10 @@ class RG:
         f_ = xp.zeros_like(h_.f)
         f_[self.nu_mask] = h_.f[self.N_nu_mask].copy()
         h_.f = f_ * ren.reshape(self.r_j1)
-        k_ = 0
+        k = 0
         iminus_f = xp.zeros_like(h_.f)
         iminus_f[self.iminus] = h_.f[self.iminus].copy()
-        while (self.TolMax > self.norm(iminus_f) > self.TolMin) and (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (k_ < self.MaxLie):
+        while (self.TolMax > self.norm(iminus_f) > self.TolMin) and (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (k < self.MaxLie):
             y = self.generate_y(h_)
             if self.CanonicalTransformation == 'expm_onestep':
                 h_ = self.expm_onestep(h_, y)
@@ -232,11 +232,11 @@ class RG:
             elif self.CanonicalTransformation == 'expm_multiply':
                 h_ = self.expm_multiply(h_, y)
             iminus_f[self.iminus] = h_.f[self.iminus].copy()
-            k_ += 1
+            k += 1
             h_.f = self.sym(h_.f)
         if (self.norm(iminus_f) > self.TolMax):
             h_.error = 2
-        elif (k_ > self.MaxLie):
+        elif (k > self.MaxLie):
             h_.error = -2
         return h_
 
