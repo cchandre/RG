@@ -38,7 +38,7 @@ ___
 ####
 - *CanonicalTransformation*: 'expm_onestep', 'expm_adapt', 'expm_multiply'; method to compute the canonical Lie transforms 
   - 'expm_onestep': compute the exponential of the Liouville operator in one single step
-  - 'expm_adapt': use an adaptative step-size method to compute the exponential of the Liouville operator with *AbsTol* and *RelTol* as tolerance parameters and *MinStep*, the minimum value of the step to be used
+  - 'expm_adapt': use an adaptative step-size method to compute the exponential of the Liouville operator with *AbsTol* and *RelTol* as tolerance parameters, and *MinStep* as the minimum value of the step to be used
   - 'expm_multiply': use the method developed in [A.H. Al-Mohy, N.J. Higham (2011) SIAM Journal on Scientific Computing 33, 488]( http://eprints.ma.man.ac.uk/1591/) to compute the exponential of the Liouville operator
 - *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
