@@ -14,7 +14,7 @@ python3 RG.py
 ___
 ##  Parameter dictionary
 
-- *Method*: 'iterates', 'surface', 'region', 'line'; choice of method
+- *Method*: string; 'iterates', 'surface', 'region', 'line'; choice of method
 - *Iterates*: integer; number of iterates to compute in `compute_iterates()`
 - *Nxy*: integer; number of points in the (*x*,*y*) figures for `compute_surface()` and `compute_region()`
 - *DistSurf*: float; distance of approach for the computation of critical values
@@ -32,11 +32,11 @@ ___
 - *L*: integer; truncation in Fourier series (angles) 
 - *J*: integer; truncation in Taylor series  (actions) 
 ####
-- *ChoiceIm*: 'AK2000', 'K1999', 'AKW1998'; definition of *I<sup>-</sup>* 
+- *ChoiceIm*: string; 'AK2000', 'K1999', 'AKW1998'; definition of *I<sup>-</sup>* 
 - *Sigma*: float; definition of *I<sup>-</sup>*
 - *Kappa*: float; definition of *I<sup>-</sup>*
 ####
-- *CanonicalTransformation*: 'expm_onestep', 'expm_adapt', 'expm_multiply'; method to compute the canonical Lie transforms 
+- *CanonicalTransformation*: string; 'expm_onestep', 'expm_adapt', 'expm_multiply'; method to compute the canonical Lie transforms 
   - 'expm_onestep': compute the exponential of the Liouville operator in one single step
   - 'expm_adapt': use an adaptative step-size method to compute the exponential of the Liouville operator with *AbsTol* and *RelTol* as tolerance parameters, and *MinStep* as the minimum value of the step to be used
   - 'expm_multiply': use the method developed in [A.H. Al-Mohy, N.J. Higham (2011) SIAM Journal on Scientific Computing 33, 488]( http://eprints.ma.man.ac.uk/1591/) to compute the exponential of the Liouville operator
@@ -50,7 +50,7 @@ ___
 - *MaxIterates*: integer; maximum number of iterates for convergence/divergence 
 ####
 - *Precision*: 32, 64 or 128; precision of calculations (default=64)
-- *NormChoice*: 'sum', 'max', 'Euclidean', 'Analytic'; choice of Hamiltonian norm 
+- *NormChoice*: string; 'sum', 'max', 'Euclidean', 'Analytic'; choice of Hamiltonian norm 
 - *NormAnalytic*: float; parameter of norm 'Analytic'
 ####
 - *SaveData*: boolean; if True, the results are saved in a `.mat` file 
