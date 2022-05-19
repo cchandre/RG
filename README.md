@@ -36,12 +36,14 @@ ___
 - *Sigma*: float; definition of *I<sup>-</sup>*
 - *Kappa*: float; definition of *I<sup>-</sup>*
 ####
-- *CanonicalTransformation*: 'expm_onestep', 'expm_multiply', 'expm_adapt'; method to compute the canonical Lie transforms 
-- *TolMinLie*: float; value of norm for convergence of Lie transforms  (for 'expm_onestep')
+- *CanonicalTransformation*: 'expm_onestep', 'expm_adapt', 'expm_multiply'; method to compute the canonical Lie transforms 
+  - 'expm_onestep': compute the exponential of the Liouville operator in one single step
+  - 'expm_adapt': use an adaptative step-size method to compute the exponential of the Liouville operator with *AbsTol* and *RelTol* as tolerance parameters and *MinStep*, the minimum value of the step to be used
+  - 'expm_multiply': use the method developed in [A.H. Al-Mohy, N.J. Higham (2011) SIAM Journal on Scientific Computing 33, 488]( http://eprints.ma.man.ac.uk/1591/) to compute the exponential of the Liouville operator
 - *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
-- *MaxLie*: integer; maximum number of Lie transforms
+- *MaxLie*: integer; maximum number of Lie transforms used in the elimination of the non-resonant modes
 ####
 - *TolMax*: float; value of Hamiltonian norm for divergence
 - *TolMin*: float; value of Hamiltonian norm for convergence 
