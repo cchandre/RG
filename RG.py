@@ -125,9 +125,9 @@ class RG:
 
     def pnorm(self, y, p=1):
         Ls = lambda f: self.liouville(y, f).flatten()
-        Ls_H = lambda f: -self.liouville(y, f).flatten()
-        A = sla.LinearOperator(shape=(self.vecjl, self.vecjl), matvec=Ls, rmatvec=Ls_H, dtype=self.Precision)**p
-        return sla.onenormest(A)**(1/p)
+        Ls_H = lambda f: -Ls(f)
+        A = sla.LinearOperator(shape=(self.vecjl, self.vecjl), matvec=Ls, rmatvec=Ls_H, dtype=self.Precision)
+        return sla.onenormest(A**p)**(1/p)
 
     def expm_multiply(self, h, y, tol=2**-53):
         h_ = copy.deepcopy(h)
