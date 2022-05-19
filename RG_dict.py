@@ -55,7 +55,7 @@ ChoiceIm = 'AK2000'
 Sigma = 0.6
 Kappa = 0.1
 
-CanonicalTransformation = 'expm_onestep'
+CanonicalTransformation = 'expm_multiply'
 TolMinLie = 1e-10
 MinStep = 0.05
 AbsTol = 1e-2

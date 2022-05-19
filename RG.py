@@ -119,39 +119,35 @@ class RG:
             y_[m][self.iminus[m]] = (h.f[m][self.iminus[m]] - 2.0 * h.f[2][self.zero_] * self.omega_nu[0][self.iminus[m]] * y_[m-1][self.iminus[m]]) / self.omega0_nu[0][self.iminus[m]]
         return y_, -h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_]), xp.roll(y_ * self.J_, -1, axis=0), self.omega_nu * y_
 
-    def liouville(self, y_, f):
-        f_d = self.derivs(f.reshape(self.r_jl))
-        return y_[1] * f_d[0] + self.conv_product(y_[2], f_d[1]) - self.conv_product(y_[3], f_d[0])
+    def liouville(self, y, f):
+        f_ = self.derivs(f.reshape(self.r_jl))
+        return y[1] * f_[0] + self.conv_product(y[2], f_[1]) - self.conv_product(y[3], f_[0])
 
-    def pnorm(self, y_, p=1):
-        Ls = lambda f: self.liouville(y_, f).flatten()
-		Ls_H = lambda f: -self.liouville(y_, f).flatten()
+    def pnorm(self, y, p=1):
+        Ls = lambda f: self.liouville(y, f).flatten()
+        Ls_H = lambda f: -self.liouville(y, f).flatten()
         A = sla.LinearOperator(shape=(self.vecjl, self.vecjl), matvec=Ls, rmatvec=Ls_H, dtype=self.Precision)**p
-        # A = A.dot(xp.identity(A.shape[1]))
-        # return la.norm(A, ord=1)**(1/p)
         return sla.onenormest(A)**(1/p)
 
     def expm_multiply(self, h, y, tol=2**-53):
         h_ = copy.deepcopy(h)
-		h_.error = 0
-        start = time.time()
+        h_.error = 0
         m_star, scale = self.compute_m_s(y)
-        print([m_star, scale, time.time() - start])
         y_ = [item / scale for item in y]
         for s in range(scale):
             sh_ = -self.omega0_nu * y_[0] + self.liouville(y_, h_.f)
             h_.f += sh_
-			c1 = self.norm_int(sh_)
+            c1 = self.norm_int(sh_)
             for m in range(2, m_star+1):
                 sh_ = self.liouville(y_, sh_) / self.Precision(m)
-				c2 = self.norm_int(sh_)
+                c2 = self.norm_int(sh_)
                 h_.f += sh_
-				if c1 + c2 <= tol * self.norm_int(h_.f):
-					break
-				elif c1 + c2 >= self.TolMax:
-					h_.error = 1
-					break
-				c1 = c2
+                if c1 + c2 <= tol * self.norm_int(h_.f):
+                    break
+                elif c1 + c2 >= self.TolMax:
+                    h_.error = 1
+                    break
+                c1 = c2
         return h_
 
     def compute_p_max(self, m_max):
@@ -187,17 +183,17 @@ class RG:
         sh_ = -self.omega0_nu * y_[0] + self.liouville(y_, h_.f)
         h_.f += sh_
         m = 2
-		c1 = self.norm_int(sh_)
+        c1 = self.norm_int(sh_)
         while True:
             sh_ = self.liouville(y_, sh_) / self.Precision(m)
-			c2 = self.norm_int(sh_)
+            c2 = self.norm_int(sh_)
             h_.f += sh_
-			if c1 + c2 <= tol * self.norm_int(h_.f):
-				break
-			elif c1 + c2 >= self.TolMax:
-				h_.error = 1
-				break
-			c1 = c2
+            if c1 + c2 <= tol * self.norm_int(h_.f):
+                break
+            elif c1 + c2 >= self.TolMax:
+                h_.error = 1
+                break
+            c1 = c2
             m += 1
         return h_
 
