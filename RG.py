@@ -71,11 +71,11 @@ class RG:
         self.Eigenvalue = xp.real(eigenval[xp.abs(eigenval) < 1])
         N_nu = xp.sign(self.Eigenvalue).astype(int) * xp.einsum('ij,j...->i...', self.N, self.nu)
         self.omega0_nu = xp.einsum('i,i...->...', self.omega0, self.nu).reshape(self.r_1l)
-        self.omega_nu = xp.einsum('i,i...->...', self.Omega, self.nu).reshape(self.r_1l)
+        self.Omega_nu = xp.einsum('i,i...->...', self.Omega, self.nu).reshape(self.r_1l)
         mask = xp.prod(abs(N_nu) <= self.L, axis=0, dtype=bool)
         norm_nu = self.Precision(la.norm(self.nu, axis=0)).reshape(self.r_1l)
         self.J_ = xp.arange(self.J+1, dtype=self.Precision).reshape(self.r_j1)
-        self.derivs = lambda f: [xp.roll(f * self.J_, -1, axis=0), self.omega_nu * f]
+        self.derivs = lambda f: [xp.roll(f * self.J_, -1, axis=0), self.Omega_nu * f]
         if self.ChoiceIm == 'AKW1998':
             comp_im = self.Sigma * xp.repeat(norm_nu, self.J+1, axis=0) + self.Kappa * self.J_
         elif self.ChoiceIm =='K1999':
@@ -94,7 +94,7 @@ class RG:
         self.norm = {
             'sum': lambda _: xp.abs(_).sum(),
             'max': lambda _: xp.abs(_).max(),
-            'Euclidean': lambda _: xp.sqrt((xp.abs(_) ** 2).sum()),
+            'Euclidean': lambda _: xp.sqrt((xp.abs(_)**2).sum()),
             'Analytic': lambda _: xp.exp(xp.log(xp.abs(_)) + self.NormAnalytic * xp.sum(xp.abs(self.nu), axis=0).reshape(self.r_1l)).max()
             }.get(self.NormChoice, lambda _: xp.abs(_).sum())
         self.theta = {
@@ -116,8 +116,8 @@ class RG:
         y = xp.zeros_like(h.f)
         y[0][self.iminus[0]] = h.f[0][self.iminus[0]] / self.omega0_nu[0][self.iminus[0]]
         for m in range(1, self.J+1):
-            y[m][self.iminus[m]] = (h.f[m][self.iminus[m]] - 2.0 * h.f[2][self.zero_] * self.omega_nu[0][self.iminus[m]] * y[m-1][self.iminus[m]]) / self.omega0_nu[0][self.iminus[m]]
-        return y, -h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_]), xp.roll(y * self.J_, -1, axis=0), self.omega_nu * y, -self.omega0_nu * y
+            y[m][self.iminus[m]] = (h.f[m][self.iminus[m]] - 2.0 * h.f[2][self.zero_] * self.Omega_nu[0][self.iminus[m]] * y[m-1][self.iminus[m]]) / self.omega0_nu[0][self.iminus[m]]
+        return y, -h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_]), xp.roll(y * self.J_, -1, axis=0), self.Omega_nu * y, -self.omega0_nu * y
 
     def liouville(self, y, f):
         f_ = self.derivs(f.reshape(self.r_jl))
@@ -137,12 +137,12 @@ class RG:
         for s in range(scale):
             sh = y_[4] + self.liouville(y_, h_.f)
             h_.f += sh
-            c1 = self.norm_int(sh)
+            c1 = self.norm(sh)
             for m in range(2, m_star+1):
                 sh = self.liouville(y_, sh) / self.Precision(m)
-                c2 = self.norm_int(sh)
+                c2 = self.norm(sh)
                 h_.f += sh
-                if c1 + c2 <= tol * self.norm_int(h_.f):
+                if c1 + c2 <= tol * self.norm(h_.f):
                     break
                 elif c1 + c2 >= self.TolMax:
                     h_.error = 1
@@ -183,12 +183,12 @@ class RG:
         sh = y_[4] + self.liouville(y_, h_.f)
         h_.f += sh
         m = 2
-        c1 = self.norm_int(sh)
+        c1 = self.norm(sh)
         while True:
             sh = self.liouville(y_, sh) / self.Precision(m)
-            c2 = self.norm_int(sh)
+            c2 = self.norm(sh)
             h_.f += sh
-            if c1 + c2 <= tol * self.norm_int(h_.f):
+            if c1 + c2 <= tol * self.norm(h_.f):
                 break
             elif c1 + c2 >= self.TolMax:
                 h_.error = 1
@@ -204,7 +204,7 @@ class RG:
             return self.expm_onestep(h_, y, step)
         h1 = self.expm_onestep(h_, y, step)
         h2 = self.expm_onestep(self.expm_onestep(h_, y, 0.5 * step), y, 0.5 * step)
-        if self.norm_int(h1.f - h2.f) < self.AbsTol + self.RelTol * self.norm_int(h1.f):
+        if self.norm(h1.f - h2.f) < self.AbsTol + self.RelTol * self.norm(h1.f):
             h_.f = 0.75 * h1.f + 0.25 * h2.f
             return h_
         else:
@@ -213,16 +213,16 @@ class RG:
     def rg_map(self, h):
         h_ = copy.deepcopy(h)
         h_.error = 0
-        omega_ = (self.N.transpose()).dot(h_.Omega)
-        ren = (2.0 * la.norm(omega_) / self.Eigenvalue * h_.f[2][self.zero_]) ** (2 - xp.arange(self.J+1, dtype=int)) / (2.0 * h_.f[2][self.zero_])
-        h_.Omega = omega_ / la.norm(omega_)
-        self.omega_nu = xp.einsum('i,i...->...', h_.Omega, self.nu).reshape(self.r_1l)
+        Omega_ = (self.N.transpose()).dot(h_.Omega)
+        ren = (2.0 * la.norm(Omega_) / self.Eigenvalue * h_.f[2][self.zero_])**(2 - xp.arange(self.J+1, dtype=int)) / (2.0 * h_.f[2][self.zero_])
+        h_.Omega = Omega_ / la.norm(Omega_)
+        self.Omega_nu = xp.einsum('i,i...->...', h_.Omega, self.nu).reshape(self.r_1l)
         f_ = xp.zeros_like(h_.f)
-        f_[self.nu_mask] = h_.f[self.N_nu_mask].copy()
+        f_[self.nu_mask] = h_.f[self.N_nu_mask]
         h_.f = f_ * ren.reshape(self.r_j1)
         k = 0
         iminus_f = xp.zeros_like(h_.f)
-        iminus_f[self.iminus] = h_.f[self.iminus].copy()
+        iminus_f[self.iminus] = h_.f[self.iminus]
         while (self.TolMax > self.norm(iminus_f) > self.TolMin) and (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (k < self.MaxLie):
             y = self.generate_y(h_)
             if self.CanonicalTransformation == 'expm_onestep':
@@ -231,7 +231,7 @@ class RG:
                 h_ = self.expm_adapt(h_, y)
             elif self.CanonicalTransformation == 'expm_multiply':
                 h_ = self.expm_multiply(h_, y)
-            iminus_f[self.iminus] = h_.f[self.iminus].copy()
+            iminus_f[self.iminus] = h_.f[self.iminus]
             k += 1
             h_.f = self.sym(h_.f)
         if (self.norm(iminus_f) > self.TolMax):
@@ -253,13 +253,13 @@ class RG:
 
     class Hamiltonian:
         def __repr__(self):
-            return '{self.__class__.name__}({self.omega, self.f, self.error, self.count})'.format(self=self)
+            return '{self.__class__.name__}({self.Omega, self.f, self.error, self.count})'.format(self=self)
 
         def __str__(self):
             return 'A {self.__class__.name__} in action-angle variables'.format(self=self)
 
-        def __init__(self, omega, f, error=0, count=0):
-            self.Omega = omega
+        def __init__(self, Omega, f, error=0, count=0):
+            self.Omega = Omega
             self.f = f
             self.error = error
             self.count = count

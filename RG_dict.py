@@ -4,14 +4,14 @@
 
 import numpy as xp
 
-Method = 'region'
-Iterates = 30
+Method = 'iterates'
+Iterates = 50
 
 #Method = 'region'
 #Method = 'surface'
 #Method = 'line'
 Nxy = 125
-DistSurf = 1e-7
+DistSurf = 1e-9
 
 ## 2D -- golden mean
 N = [[1, 1], [1, 0]]
@@ -19,7 +19,7 @@ omega0 = [(xp.sqrt(5)-1)/2, -1]
 Omega = [1, 0]
 K = ((0, 1, 0), (0, 1, 1))
 AmpInf = [0, 0]
-AmpSup = [0.35, 0.12]
+AmpSup = [0.04, 0.04]
 CoordLine = [0.0, 0.028]
 ModesLine = (1, 1)
 DirLine = [1, 1]
@@ -48,8 +48,8 @@ DirLine = [1, 1]
 # ModesLine = (1, 1, 0)
 # DirLine = [1, 5, 0.01]
 
-L = 5
-J = 5
+L = 22
+J = 7
 
 ChoiceIm = 'AK2000'
 Sigma = 0.6
@@ -70,8 +70,8 @@ NormAnalytic = 1
 Precision = 64
 
 SaveData = False
-PlotResults = True
-Parallelization = (True, 5)
+PlotResults = False
+Parallelization = (False, 5)
 
 ##################################################################################################
 ##                              DO NOT EDIT BELOW                                               ##
