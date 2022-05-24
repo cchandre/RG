@@ -15,8 +15,8 @@ ___
 ##  Parameter dictionary
 
 - *Method*: string; 'iterates', 'surface', 'region', 'line'; choice of method
-- *Iterates*: integer; number of iterates to compute in `compute_iterates()`
-- *Nxy*: integer; number of points in the (*x*,*y*) figures for `compute_surface()` and `compute_region()`
+- *Iterates*: integer; number of iterates to compute for *Method*='iterates'
+- *Nxy*: integer; number of points along each direction for *Method*='surface' or 'region'
 - *DistSurf*: float; distance of approach for the computation of critical values
 ####
 - *N*: *n*x*n* integer matrix with determinant ±1
@@ -25,9 +25,9 @@ ___
 - *K*: 2-dimensional tuple of integers; wavevectors (j,k<sub>1</sub>,...,k<sub>n</sub>) of the perturbation 
 - *AmpInf*: array of *len(K)* floats; minimal amplitudes of the perturbation 
 - *AmpSup*: array of *len(K)* floats; maximum amplitudes of the perturbation
-- *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used in `compute_line()`   
+- *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used *Method*='line'   
 - *ModesLine*: tuple of 0 and 1; specify which modes are being varied (1 for a varied mode)     
-- *DirLine*: 1d array of floats; direction of the one-parameter family used in `compute_line()` 
+- *DirLine*: 1d array of floats; direction of the one-parameter family used for *Method*='line' 
 ####
 - *L*: integer; truncation in Fourier series (angles) 
 - *J*: integer; truncation in Taylor series  (actions) 
@@ -43,13 +43,11 @@ ___
 - *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
-- *MaxLie*: integer; maximum number of Lie transforms used in the elimination of the non-resonant modes
 ####
-- *TolMax*: float; value of Hamiltonian norm for divergence
-- *TolMin*: float; value of Hamiltonian norm for convergence 
-- *MaxIterates*: integer; maximum number of iterates for convergence/divergence 
+- *TolMax*: float; value of the norm of the Hamiltonian for divergence
+- *TolMin*: float; value of the norm of the Hamiltonian for convergence 
 ####
-- *Precision*: 32, 64 or 128; precision of calculations (default=64)
+- *Precision*: integer; 32, 64 or 128; precision of calculations (default=64)
 - *NormChoice*: string; 'sum', 'max', 'Euclidean', 'Analytic'; choice of Hamiltonian norm 
 - *NormAnalytic*: float; parameter of norm 'Analytic'
 ####
@@ -57,6 +55,16 @@ ___
 - *PlotResults*: boolean; if True, the results are plotted right after the computation
 - *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used (all of them: int='all')
 ####
+---
+## Error codes
+- `0`: all transformations have been properly computed (no error)
+- `1`: one of the Lie transforms is not accurately computed
+- `2`: the series of canonical transformations to eliminate the non-resonant part of the Hamiltonian is diverging
+- `3`: (only in the strict approach) the iterates of the RG map on the redefined Hamiltonian H<sub>1</sub> diverge (H<sub>1</sub> is above the critical surface)
+- `-3`: (only in the strict approach) the iterates of the RG map on the redefined Hamiltonian H<sub>2</sub> converge (H<sub>2</sub> is below the critical surface)
+- `4`: the iterates of the RG map on the initially generated Hamiltonian H<sub>1</sub> diverge (H<sub>1</sub> is above the critical surface)
+- `-4`: the iterates of the RG map on the initially generated Hamiltonian H<sub>2</sub> converge (H<sub>2</sub> is below the critical surface)
+- `5`: the step in the adaptive step-size computation of the Lie transform ('expm_adapt') is below the minimum defined step size (*MinStep*)
 ---
 
 References: 
