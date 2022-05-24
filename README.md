@@ -43,11 +43,9 @@ ___
 - *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
-- *MaxLie*: integer; maximum number of Lie transforms used in the elimination of the non-resonant modes
 ####
 - *TolMax*: float; value of Hamiltonian norm for divergence
 - *TolMin*: float; value of Hamiltonian norm for convergence 
-- *MaxIterates*: integer; maximum number of iterates for convergence/divergence 
 ####
 - *Precision*: 32, 64 or 128; precision of calculations (default=64)
 - *NormChoice*: string; 'sum', 'max', 'Euclidean', 'Analytic'; choice of Hamiltonian norm 
@@ -62,7 +60,6 @@ ___
 - `0`: all transformations have been properly computed (no error)
 - `1`: one if the Lie transforms is not accurately computed
 - `2`: the series of canonical transformations to eliminate the non-resonant part of the Hamiltonian is diverging
-- `-2`: the series of canonical transformations to eliminate the non-resonant part of the Hamiltonian is not converging (number of steps perfomed exceeds the maximum value *MaxLie*)
 - `3`: (only in the strict approach) the iterates of the RG map on the redefined Hamiltonian H<sub>1</sub> do not converge (H<sub>1</sub> is above the critical surface)
 - `-3`: (only in the strict approach) the iterates of the RG map on the redefined Hamiltonian H<sub>2</sub> converge (H<sub>2</sub> is below the critical surface)
 - `4`: the iterates of the RG map on Hamiltonian H<sub>1</sub> do not converge (H<sub>1</sub> is above the critical surface)
