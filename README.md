@@ -58,6 +58,16 @@ ___
 - *Parallelization*: tuple (boolean, int); True for parallelization, int is the number of cores to be used (all of them: int='all')
 ####
 ---
+## Error codes
+- `0`: all transformations have been properly computed (no error)
+- `1`: one if the Lie transforms is not accurately computed
+- `2`: the series of canonical transformations to eliminate the non-resonant part of the Hamiltonian is diverging
+- `-2`: the series of canonical transformations to eliminate the non-resonant part of the Hamiltonian is not converging (number of steps perfomed exceeds the maximum value *MaxLie*)
+- `3`: 
+- `4`: the iterates of the RG map on Hamiltonian H<sub>1</sub> do not converge (H<sub>1</sub> is above the critical surface)
+- `-4`: the iterates of the RG map on Hamiltonian H<sub>2</sub> converge (H<sub>2</sub> is below the critical surface)
+- `5`: the step in the adaptive step-size computation of the Lie transform ('expm_adapt') is below the minimum defined step size (*MinStep*)
+---
 
 References: 
 - C. Chandre, H.R. Jauslin, *Renormalization-group analysis for the transition to chaos in Hamiltonian systems*, [Physics Reports](https://doi.org/10.1016/S0370-1573(01)00094-1) 365, 1 (2002)
