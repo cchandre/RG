@@ -11,7 +11,7 @@ Iterates = 50
 #Method = 'surface'
 #Method = 'line'
 Nxy = 125
-DistSurf = 1e-9
+DistSurf = 1e-10
 
 ## 2D -- golden mean
 N = [[1, 1], [1, 0]]
@@ -48,7 +48,7 @@ DirLine = [1, 1]
 # ModesLine = (1, 1, 0)
 # DirLine = [1, 5, 0.01]
 
-L = 22
+L = 8
 J = 7
 
 ChoiceIm = 'AK2000'
@@ -59,11 +59,9 @@ CanonicalTransformation = 'expm_multiply'
 MinStep = 0.05
 AbsTol = 1e-2
 RelTol = 1e-3
-MaxLie = 100
 
 TolMax = 1e+4
 TolMin = 1e-10
-MaxIterates = 100
 
 NormChoice = 'sum'
 NormAnalytic = 1
@@ -97,14 +95,12 @@ dict.update({
         'ChoiceIm': ChoiceIm,
         'Sigma': Sigma,
         'Kappa': Kappa,
-        'CanonicalTransformation': CanonicalTransformation,
+        'CanonicalTransformation': 'self.' + CanonicalTransformation,
         'MinStep': MinStep,
         'AbsTol': AbsTol,
         'RelTol': RelTol,
-        'MaxLie': MaxLie,
         'TolMax': TolMax,
         'TolMin': TolMin,
-        'MaxIterates': MaxIterates,
         'NormChoice': NormChoice,
         'NormAnalytic': NormAnalytic,
         'Precision': Precision,

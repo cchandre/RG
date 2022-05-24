@@ -33,10 +33,9 @@ import scipy.signal as sps
 import copy
 import itertools
 import warnings
-warnings.filterwarnings("ignore")
+# warnings.filterwarnings("ignore")
 from RG_modules import compute_iterates, compute_surface, compute_region, compute_line
 from RG_dict import dict
-import time
 
 def main():
     case = RG(dict)
@@ -85,7 +84,7 @@ class RG:
             norm_w_nu = la.norm(w_nu, axis=0).reshape(self.r_1l)
             comp_im = self.Sigma * xp.repeat(norm_w_nu, self.J+1, axis=0) + self.Kappa * self.J_
         omega0_nu_ = xp.repeat(xp.abs(self.omega0_nu), self.J+1, axis=0) / la.norm(self.omega0)
-        self.iminus = omega0_nu_ > comp_im
+        self.Iminus = omega0_nu_ > comp_im
         self.nu_mask = xp.index_exp[:self.J+1]
         self.N_nu_mask = xp.index_exp[:self.J+1]
         for _ in range(self.dim):
@@ -114,10 +113,10 @@ class RG:
 
     def generate_y(self, h):
         y = xp.zeros_like(h.f)
-        y[0][self.iminus[0]] = h.f[0][self.iminus[0]] / self.omega0_nu[0][self.iminus[0]]
+        y[0][self.Iminus[0]] = h.f[0][self.Iminus[0]] / self.omega0_nu[0][self.Iminus[0]]
         for m in range(1, self.J+1):
-            y[m][self.iminus[m]] = (h.f[m][self.iminus[m]] - 2.0 * h.f[2][self.zero_] * self.Omega_nu[0][self.iminus[m]] * y[m-1][self.iminus[m]]) / self.omega0_nu[0][self.iminus[m]]
-        return y, -h.f[1][self.zero_] / (2.0 * h.f[2][self.zero_]), xp.roll(y * self.J_, -1, axis=0), self.Omega_nu * y, -self.omega0_nu * y
+            y[m][self.Iminus[m]] = (h.f[m][self.Iminus[m]] - 2 * h.f[2][self.zero_] * self.Omega_nu[0][self.Iminus[m]] * y[m-1][self.Iminus[m]]) / self.omega0_nu[0][self.Iminus[m]]
+        return y, -h.f[1][self.zero_] / (2 * h.f[2][self.zero_]), xp.roll(y * self.J_, -1, axis=0), self.Omega_nu * y, -self.omega0_nu * y
 
     def liouville(self, y, f):
         f_ = self.derivs(f.reshape(self.r_jl))
@@ -129,27 +128,6 @@ class RG:
         A = sla.LinearOperator(shape=(self.vecjl, self.vecjl), matvec=Ls, rmatvec=Ls_H, dtype=self.Precision)
         return sla.onenormest(A**p)**(1/p)
 
-    def expm_multiply(self, h, y, tol=2**-53):
-        h_ = copy.deepcopy(h)
-        h_.error = 0
-        m_star, scale = self.compute_m_s(y)
-        y_ = [item / scale for item in y]
-        for s in range(scale):
-            sh = y_[4] + self.liouville(y_, h_.f)
-            h_.f += sh
-            c1 = self.norm(sh)
-            for m in range(2, m_star+1):
-                sh = self.liouville(y_, sh) / self.Precision(m)
-                c2 = self.norm(sh)
-                h_.f += sh
-                if c1 + c2 <= tol * self.norm(h_.f):
-                    break
-                elif c1 + c2 >= self.TolMax:
-                    h_.error = 1
-                    break
-                c1 = c2
-        return h_
-
     def compute_p_max(self, m_max):
         sqrt_m_max = xp.sqrt(m_max)
         p_low, p_high = int(xp.floor(sqrt_m_max)), int(xp.ceil(sqrt_m_max + 1))
@@ -159,7 +137,7 @@ class RG:
         best_m, best_s = None, None
         norm_ls = self.pnorm(y)
         p_max = self.compute_p_max(m_max)
-        if norm_ls <= 2 * ell * p_max * (p_max + 3) * self.theta[m_max] / float(n0 * m_max):
+        if norm_ls < 2 * ell * p_max * (p_max + 3) * self.theta[m_max] / float(n0 * m_max):
             for m, theta in self.theta.items():
                 s = int(xp.ceil(norm_ls / theta))
                 if best_m is None or m * s < best_m * best_s:
@@ -176,6 +154,27 @@ class RG:
             best_s = max(best_s, 1)
         return best_m, best_s
 
+    def expm_multiply(self, h, y, tol=2**-53):
+        h_ = copy.deepcopy(h)
+        h_.error = 0
+        m_star, scale = self.compute_m_s(y)
+        y_ = [item / scale for item in y]
+        for s in range(scale):
+            sh = y_[4] + self.liouville(y_, h_.f)
+            h_.f += sh
+            c1 = self.norm(sh)
+            for m in range(2, m_star+1):
+                sh = self.liouville(y_, sh) / self.Precision(m)
+                c2 = self.norm(sh)
+                h_.f += sh
+                if c1 + c2 < tol * self.norm(h_.f):
+                    break
+                elif c1 + c2 > self.TolMax:
+                    h_.error = 1
+                    break
+                c1 = c2
+        return h_
+
     def expm_onestep(self, h, y, step=1, tol=2**-53):
         h_ = copy.deepcopy(h)
         h_.error = 0
@@ -188,16 +187,16 @@ class RG:
             sh = self.liouville(y_, sh) / self.Precision(m)
             c2 = self.norm(sh)
             h_.f += sh
-            if c1 + c2 <= tol * self.norm(h_.f):
+            if c1 + c2 < tol * self.norm(h_.f):
                 break
-            elif c1 + c2 >= self.TolMax:
+            elif c1 + c2 > self.TolMax:
                 h_.error = 1
                 break
             c1 = c2
             m += 1
         return h_
 
-    def expm_adapt(self, h, y, step=1):
+    def expm_adapt(self, h, y, step=1.0):
         h_ = copy.deepcopy(h)
         if step < self.MinStep:
             h_.error = 5
@@ -214,55 +213,118 @@ class RG:
         h_ = copy.deepcopy(h)
         h_.error = 0
         Omega_ = (self.N.transpose()).dot(h_.Omega)
-        ren = (2.0 * la.norm(Omega_) / self.Eigenvalue * h_.f[2][self.zero_])**(2 - xp.arange(self.J+1, dtype=int)) / (2.0 * h_.f[2][self.zero_])
+        ren = (2 * la.norm(Omega_) / self.Eigenvalue * h_.f[2][self.zero_])**(2 - xp.arange(self.J+1, dtype=int)) / (2 * h_.f[2][self.zero_])
         h_.Omega = Omega_ / la.norm(Omega_)
         self.Omega_nu = xp.einsum('i,i...->...', h_.Omega, self.nu).reshape(self.r_1l)
         f_ = xp.zeros_like(h_.f)
         f_[self.nu_mask] = h_.f[self.N_nu_mask]
         h_.f = f_ * ren.reshape(self.r_j1)
-        k = 0
-        iminus_f = xp.zeros_like(h_.f)
-        iminus_f[self.iminus] = h_.f[self.iminus]
-        while (self.TolMax > self.norm(iminus_f) > self.TolMin) and (self.TolMax > self.norm_int(h_.f) > self.TolMin) and (k < self.MaxLie):
-            y = self.generate_y(h_)
-            if self.CanonicalTransformation == 'expm_onestep':
-                h_ = self.expm_onestep(h_, y)
-            elif self.CanonicalTransformation == 'expm_adapt':
-                h_ = self.expm_adapt(h_, y)
-            elif self.CanonicalTransformation == 'expm_multiply':
-                h_ = self.expm_multiply(h_, y)
-            iminus_f[self.iminus] = h_.f[self.iminus]
-            k += 1
-            h_.f = self.sym(h_.f)
-        if (self.norm(iminus_f) > self.TolMax):
+        Iminus_f = xp.zeros_like(h_.f)
+        Iminus_f[self.Iminus] = h_.f[self.Iminus]
+        while self.TolMax > self.norm(Iminus_f) > self.TolMin:
+            h_ = self.sym(eval(self.CanonicalTransformation)(h_, self.generate_y(h_)))
+            Iminus_f[self.Iminus] = h_.f[self.Iminus]
+        if self.norm(Iminus_f) > self.TolMax:
             h_.error = 2
-        elif (k > self.MaxLie):
-            h_.error = -2
         return h_
 
-    def norm_int(self, fun):
-        fun_ = fun.copy()
-        fun_[xp.index_exp[:self.J+1] + self.zero_] = 0.0
-        return self.norm(fun_)
+    def norm_int(self, h):
+        f = h.f.copy()
+        f[xp.index_exp[:self.J+1] + self.zero_] = 0.0
+        return self.norm(f)
 
-    def sym(self, fun):
-        fun_ = (fun + xp.roll(xp.flip(fun, axis=self.axis_dim), 1, axis=self.axis_dim).conj()) / 2.0
-        fun_[0][self.zero_] = 0.0
-        fun_[xp.abs(fun_) < self.TolMin**2] = 0.0
-        return fun_
+    def sym(self, h, tol=2**-53):
+        h_ = copy.deepcopy(h)
+        h_.f = (h.f + xp.roll(xp.flip(h.f, axis=self.axis_dim), 1, axis=self.axis_dim).conj()) / 2
+        h_.f[0][self.zero_] = 0.0
+        h_.f[xp.abs(h_.f) < tol] = 0.0
+        return h_
 
-    class Hamiltonian:
-        def __repr__(self):
-            return '{self.__class__.name__}({self.Omega, self.f, self.error, self.count})'.format(self=self)
+    def generate_1Hamiltonian(self, amps, symmetric=False):
+        f_ = xp.zeros(self.r_jl, dtype=self.Precision)
+        for k, amp in zip(self.K, amps):
+            f_[k] = amp
+        h = Hamiltonian(self.Omega, f_)
+        h.f[2][self.zero_] = 0.5
+        if symmetric:
+            return self.sym(h)
+        else:
+            return h
 
-        def __str__(self):
-            return 'A {self.__class__.name__} in action-angle variables'.format(self=self)
+    def generate_2Hamiltonians(self, amps):
+        h_list = [self.generate_1Hamiltonian(amp, symmetric=True) for amp in amps]
+        if not self.converge(h_list[0]):
+            h_list[0].error = 4
+        if self.converge(h_list[1]):
+            h_list[1].error = -4
+        else:
+            h_list[1].error = 0
+        return h_list
 
-        def __init__(self, Omega, f, error=0, count=0):
-            self.Omega = Omega
-            self.f = f
-            self.error = error
-            self.count = count
+    def converge(self, h):
+        h_ = copy.deepcopy(h)
+        k, h_.error = 0, 0
+        while self.TolMax > self.norm_int(h_) > self.TolMin:
+            h_ = self.rg_map(h_)
+            k += 1
+        if self.norm_int(h_) < self.TolMin:
+            h.count = -k
+            return True
+        else:
+            h.count = k
+            h.error = h_.error
+            return False
+
+    def approach(self, h_list, dist, strict=False, display=False):
+        h_list_ = copy.deepcopy(h_list)
+        for h in h_list_:
+            h.error = 0
+        while self.norm_int(h_list_[0] - h_list_[1]) > dist:
+            h_mid = (h_list_[0] + h_list_[1]) * 0.5
+            if self.converge(h_mid):
+                h_list_[0] = copy.deepcopy(h_mid)
+            else:
+                h_list_[1] = copy.deepcopy(h_mid)
+            if display:
+                print('\033[90m               [{:.6f}   {:.6f}] \033[00m'.format(2 * h_list_[0].f[self.ModesK[0]], 2 * h_list_[1].f[self.ModesK[0]]))
+        if display:
+            print('\033[96m          Critical parameters = {} \033[00m'.format([2 * h_list_[0].f[k] for k in self.K]))
+        h_list_[1].error = 0
+        if strict:
+            h_mid = (h_list_[0] + h_list_[1]) * 0.5
+            delta = dist / self.norm_int(h_list_[0] - h_list_[1])
+            for h in h_list_:
+                h = h_mid + (h - h_mid) * delta
+            if not self.converge(h_list_[0]):
+                h_list_[0].error = 3
+            if self.converge(h_list_[1]):
+                h_list_[1].error = -3
+        return h_list_
+
+class Hamiltonian:
+    def __repr__(self):
+        return '{self.__class__.name__}({self.Omega, self.f, self.error, self.count})'.format(self=self)
+
+    def __str__(self):
+        return 'A {self.__class__.name__} in action-angle variables'.format(self=self)
+
+    def __init__(self, Omega, f, error=0, count=0):
+        self.Omega = Omega
+        self.f = f
+        self.error = error
+        self.count = count
+
+    def __add__(self, other):
+        return Hamiltonian(self.Omega, self.f + other.f, error=self.error, count=self.count)
+
+    def __sub__(self, other):
+        return Hamiltonian(self.Omega, self.f - other.f, error=self.error, count=self.count)
+
+    def __mul__(self, other):
+        if isinstance(other, float) or isinstance(other, int):
+            return Hamiltonian(self.Omega, other * self.f, error=self.error, count=self.count)
+        else:
+            raise TypeError('multiplication only defined with a float or a int')
 
 if __name__ == "__main__":
     main()
