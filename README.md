@@ -15,8 +15,8 @@ ___
 ##  Parameter dictionary
 
 - *Method*: string; 'iterates', 'surface', 'region', 'line'; choice of method
-- *Iterates*: integer; number of iterates to compute in `compute_iterates()`
-- *Nxy*: integer; number of points in the (*x*,*y*) figures for `compute_surface()` and `compute_region()`
+- *Iterates*: integer; number of iterates to compute for *Method*='iterates'
+- *Nxy*: integer; number of points along each direction for *Method*='surface' or 'region'
 - *DistSurf*: float; distance of approach for the computation of critical values
 ####
 - *N*: *n*x*n* integer matrix with determinant ±1
@@ -25,9 +25,9 @@ ___
 - *K*: 2-dimensional tuple of integers; wavevectors (j,k<sub>1</sub>,...,k<sub>n</sub>) of the perturbation 
 - *AmpInf*: array of *len(K)* floats; minimal amplitudes of the perturbation 
 - *AmpSup*: array of *len(K)* floats; maximum amplitudes of the perturbation
-- *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used in `compute_line()`   
+- *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used *Method*='line'   
 - *ModesLine*: tuple of 0 and 1; specify which modes are being varied (1 for a varied mode)     
-- *DirLine*: 1d array of floats; direction of the one-parameter family used in `compute_line()` 
+- *DirLine*: 1d array of floats; direction of the one-parameter family used for *Method*='line' 
 ####
 - *L*: integer; truncation in Fourier series (angles) 
 - *J*: integer; truncation in Taylor series  (actions) 
@@ -44,10 +44,10 @@ ___
 - *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
 ####
-- *TolMax*: float; value of Hamiltonian norm for divergence
-- *TolMin*: float; value of Hamiltonian norm for convergence 
+- *TolMax*: float; value of the norm of the Hamiltonian for divergence
+- *TolMin*: float; value of the norm of the Hamiltonian for convergence 
 ####
-- *Precision*: 32, 64 or 128; precision of calculations (default=64)
+- *Precision*: integer; 32, 64 or 128; precision of calculations (default=64)
 - *NormChoice*: string; 'sum', 'max', 'Euclidean', 'Analytic'; choice of Hamiltonian norm 
 - *NormAnalytic*: float; parameter of norm 'Analytic'
 ####
