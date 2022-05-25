@@ -64,11 +64,9 @@ ___
 - `0`: all transformations have been properly computed (no error)
 - `1`: one of the Lie transforms is not accurately computed
 - `2`: the series of canonical transformations to eliminate the non-resonant part of the Hamiltonian is diverging
-- `3`: (only in the strict approach) the iterates of the RG map on the redefined Hamiltonian *H*<sub>1</sub> diverge (*H*<sub>1</sub> is above the critical surface)
-- `-3`: (only in the strict approach) the iterates of the RG map on the redefined Hamiltonian *H*<sub>2</sub> converge (*H*<sub>2</sub> is below the critical surface)
-- `4`: the iterates of the RG map on the initially generated Hamiltonian *H*<sub>1</sub> diverge (*H*<sub>1</sub> is above the critical surface)
-- `-4`: the iterates of the RG map on the initially generated Hamiltonian *H*<sub>2</sub> converge (*H*<sub>2</sub> is below the critical surface)
-- `5`: the step in the adaptive step-size computation of the Lie transform ('expm_adapt') is below the minimum defined step size (*MinStep*)
+- `3`: the iterates of the RG map on the initially generated Hamiltonian *H*<sub>1</sub> diverge (*H*<sub>1</sub> is above the critical surface)
+- `-3`: the iterates of the RG map on the initially generated Hamiltonian *H*<sub>2</sub> converge (*H*<sub>2</sub> is below the critical surface)
+- `4`: the step in the adaptive step-size computation of the Lie transform ('expm_adapt') is below the minimum defined step size (*MinStep*)
 ---
 
 References: 
