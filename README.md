@@ -15,6 +15,10 @@ ___
 ##  Parameter dictionary
 
 - *Method*: string; 'iterates', 'surface', 'region', 'line'; choice of method
+  - 'iterates': starting from two Hamiltonians *H*<sub>1</sub> and *H*<sub>2</sub> defined with the modes *K* and amplitudes *AmpInf* and *AmpSup* respectively, the method first refines *H*<sub>1</sub> and *H*<sub>2</sub> close to the critical surface using a dichotomy procedure. Second, it iterates these two Hamiltonians by iterating and refining with the renormalization map. 
+  - 'surface': computes the critical surface in the plane of Fourier modes defined by *K* and *ModesLine* (the two modes *K* with *ModesLine*=1)
+  - 'region': in the plane of Fourier modes defined by *K* and *ModesLine* (the two modes *K* with *ModesLine*=1) with amplitudes in the range defined by *AmpInf* and *AmpSup*, determines the number of iterations for the Hamiltonian to converge (negative integers) or diverge (positive integers)
+  - 'line': for the family of Hamiltonians defined by the modes *K* in the direction *DirLine* with *ModesLine*=1, determines the critical threshold 
 - *Iterates*: integer; number of iterates to compute for *Method*='iterates'
 - *Nxy*: integer; number of points along each direction for *Method*='surface' or 'region'
 - *DistSurf*: float; distance of approach for the computation of critical values
@@ -25,9 +29,9 @@ ___
 - *K*: 2-dimensional tuple of integers; wavevectors (j,k<sub>1</sub>,...,k<sub>n</sub>) of the perturbation 
 - *AmpInf*: array of *len(K)* floats; minimal amplitudes of the perturbation 
 - *AmpSup*: array of *len(K)* floats; maximum amplitudes of the perturbation
-- *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used *Method*='line'   
-- *ModesLine*: tuple of 0 and 1; specify which modes are being varied (1 for a varied mode)     
-- *DirLine*: 1d array of floats; direction of the one-parameter family used for *Method*='line' 
+- *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used in *Method*='line'   
+- *ModesLine*: tuple of 0 and 1 of length *len(K)*; specify which modes are being varied (1 for a varied mode)     
+- *DirLine*: 1d array of floats; direction of the one-parameter family used in *Method*='line' 
 ####
 - *L*: integer; truncation in Fourier series (angles) 
 - *J*: integer; truncation in Taylor series  (actions) 
@@ -39,7 +43,7 @@ ___
 - *CanonicalTransformation*: string; 'expm_onestep', 'expm_adapt', 'expm_multiply'; method to compute the canonical Lie transforms 
   - 'expm_onestep': compute the exponential of the Liouville operator in one single step
   - 'expm_adapt': use an adaptative step-size method to compute the exponential of the Liouville operator with *AbsTol* and *RelTol* as tolerance parameters, and *MinStep* as the minimum value of the step to be used
-  - 'expm_multiply': use the method developed in [A.H. Al-Mohy, N.J. Higham, SIAM Journal on Scientific Computing 33, 488 (2011)]( http://eprints.ma.man.ac.uk/1591/) to compute the exponential of the Liouville operator
+  - 'expm_multiply': use the algorithm developed in [A.H. Al-Mohy, N.J. Higham, SIAM Journal on Scientific Computing 33, 488 (2011)]( http://eprints.ma.man.ac.uk/1591/) to compute the exponential of the Liouville operator
 - *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
@@ -60,11 +64,9 @@ ___
 - `0`: all transformations have been properly computed (no error)
 - `1`: one of the Lie transforms is not accurately computed
 - `2`: the series of canonical transformations to eliminate the non-resonant part of the Hamiltonian is diverging
-- `3`: (only in the strict approach) the iterates of the RG map on the redefined Hamiltonian H<sub>1</sub> diverge (H<sub>1</sub> is above the critical surface)
-- `-3`: (only in the strict approach) the iterates of the RG map on the redefined Hamiltonian H<sub>2</sub> converge (H<sub>2</sub> is below the critical surface)
-- `4`: the iterates of the RG map on the initially generated Hamiltonian H<sub>1</sub> diverge (H<sub>1</sub> is above the critical surface)
-- `-4`: the iterates of the RG map on the initially generated Hamiltonian H<sub>2</sub> converge (H<sub>2</sub> is below the critical surface)
-- `5`: the step in the adaptive step-size computation of the Lie transform ('expm_adapt') is below the minimum defined step size (*MinStep*)
+- `3`: the iterates of the RG map on the initially generated Hamiltonian *H*<sub>1</sub> diverge (*H*<sub>1</sub> is above the critical surface)
+- `-3`: the iterates of the RG map on the initially generated Hamiltonian *H*<sub>2</sub> converge (*H*<sub>2</sub> is below the critical surface)
+- `4`: the step in the adaptive step-size computation of the Lie transform ('expm_adapt') is below the minimum defined step size (*MinStep*)
 ---
 
 References: 
