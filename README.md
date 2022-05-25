@@ -25,9 +25,9 @@ ___
 - *K*: 2-dimensional tuple of integers; wavevectors (j,k<sub>1</sub>,...,k<sub>n</sub>) of the perturbation 
 - *AmpInf*: array of *len(K)* floats; minimal amplitudes of the perturbation 
 - *AmpSup*: array of *len(K)* floats; maximum amplitudes of the perturbation
-- *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used *Method*='line'   
+- *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used in *Method*='line'   
 - *ModesLine*: tuple of 0 and 1; specify which modes are being varied (1 for a varied mode)     
-- *DirLine*: 1d array of floats; direction of the one-parameter family used for *Method*='line' 
+- *DirLine*: 1d array of floats; direction of the one-parameter family used in *Method*='line' 
 ####
 - *L*: integer; truncation in Fourier series (angles) 
 - *J*: integer; truncation in Taylor series  (actions) 
@@ -39,7 +39,7 @@ ___
 - *CanonicalTransformation*: string; 'expm_onestep', 'expm_adapt', 'expm_multiply'; method to compute the canonical Lie transforms 
   - 'expm_onestep': compute the exponential of the Liouville operator in one single step
   - 'expm_adapt': use an adaptative step-size method to compute the exponential of the Liouville operator with *AbsTol* and *RelTol* as tolerance parameters, and *MinStep* as the minimum value of the step to be used
-  - 'expm_multiply': use the method developed in [A.H. Al-Mohy, N.J. Higham, SIAM Journal on Scientific Computing 33, 488 (2011)]( http://eprints.ma.man.ac.uk/1591/) to compute the exponential of the Liouville operator
+  - 'expm_multiply': use the algorithm developed in [A.H. Al-Mohy, N.J. Higham, SIAM Journal on Scientific Computing 33, 488 (2011)]( http://eprints.ma.man.ac.uk/1591/) to compute the exponential of the Liouville operator
 - *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
