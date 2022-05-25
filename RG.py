@@ -199,7 +199,7 @@ class RG:
     def expm_adapt(self, h, y, step=1.0):
         h_ = copy.deepcopy(h)
         if step < self.MinStep:
-            h_.error = 5
+            h_.error = 4
             return self.expm_onestep(h_, y, step)
         h1 = self.expm_onestep(h_, y, step)
         h2 = self.expm_onestep(self.expm_onestep(h_, y, 0.5 * step), y, 0.5 * step)
@@ -219,13 +219,17 @@ class RG:
         f_ = xp.zeros_like(h_.f)
         f_[self.nu_mask] = h_.f[self.N_nu_mask]
         h_.f = f_ * ren.reshape(self.r_j1)
-        Iminus_f = xp.zeros_like(h_.f)
+        k, Iminus_f = 0, xp.zeros_like(h_.f)
         Iminus_f[self.Iminus] = h_.f[self.Iminus]
-        while self.TolMax > self.norm(Iminus_f) > self.TolMin:
+        while self.TolMax > self.norm(Iminus_f) > self.TolMin and k < self.MaxLie:
             h_ = self.sym(eval(self.CanonicalTransformation)(h_, self.generate_y(h_)))
             Iminus_f[self.Iminus] = h_.f[self.Iminus]
+            k += 1
         if self.norm(Iminus_f) > self.TolMax:
             h_.error = 2
+        elif k >= self.MaxLie:
+            warnings.warn('Maximum number of Lie transforms reached (MaxLie)')
+            h_.error = -2
         return h_
 
     def norm_int(self, h):
@@ -254,9 +258,9 @@ class RG:
     def generate_2Hamiltonians(self, amps):
         h_list = [self.generate_1Hamiltonian(amp, symmetric=True) for amp in amps]
         if not self.converge(h_list[0]):
-            h_list[0].error = 4
+            h_list[0].error = 3
         if self.converge(h_list[1]):
-            h_list[1].error = -4
+            h_list[1].error = -3
         else:
             h_list[1].error = 0
         return h_list
@@ -275,11 +279,11 @@ class RG:
             h.error = h_.error
             return False
 
-    def approach(self, h_list, dist, strict=False, display=False):
+    def approach(self, h_list, dist, display=False):
         h_list_ = copy.deepcopy(h_list)
         for h in h_list_:
             h.error = 0
-        while self.norm_int(h_list_[0] - h_list_[1]) > dist:
+        while self.norm_int(h_list_[0] - h_list_[1]) > dist * self.norm(h_lists_[0].f):
             h_mid = (h_list_[0] + h_list_[1]) * 0.5
             if self.converge(h_mid):
                 h_list_[0] = copy.deepcopy(h_mid)
@@ -290,15 +294,6 @@ class RG:
         if display:
             print('\033[96m          Critical parameters = {} \033[00m'.format([2 * h_list_[0].f[k] for k in self.K]))
         h_list_[1].error = 0
-        if strict:
-            h_mid = (h_list_[0] + h_list_[1]) * 0.5
-            delta = dist / self.norm_int(h_list_[0] - h_list_[1])
-            for h in h_list_:
-                h = h_mid + (h - h_mid) * delta
-            if not self.converge(h_list_[0]):
-                h_list_[0].error = 3
-            if self.converge(h_list_[1]):
-                h_list_[1].error = -3
         return h_list_
 
 class Hamiltonian:

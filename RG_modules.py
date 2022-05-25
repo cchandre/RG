@@ -55,7 +55,7 @@ def compute_iterates(case):
         while k_ < case.Iterates and h_list[0].error == 0:
             k_ += 1
             start = time.time()
-            h_list = case.approach(h_list, dist=case.DistSurf, strict=False)
+            h_list = case.approach(h_list, dist=case.DistSurf)
             h_list_ = [case.rg_map(h_list[0]), case.rg_map(h_list[1])]
             if k_ == 1:
                 print('\033[96m          Critical parameter = {:.6f} \033[00m'.format(2.0 * h_list[0].f[case.ModesK[0]]))
@@ -70,10 +70,10 @@ def compute_iterates(case):
         save_data('iterates', data, timestr, case, info='diff     delta     <f2>', display=True)
 
 def compute_cr(epsilon, case):
-    [amp_inf_, amp_sup_] = [case.AmpInf, case.AmpSup].copy()
-    amp_inf_[0] = case.AmpInf[0] + epsilon * (case.AmpSup[0] - case.AmpInf[0])
-    amp_sup_[0] = amp_inf_[0].copy()
-    h_list = case.generate_2Hamiltonians((amp_inf_, amp_sup_))
+    [amp_inf, amp_sup] = [case.AmpInf, case.AmpSup].copy()
+    amp_inf[0] = case.AmpInf[0] + epsilon * (case.AmpSup[0] - case.AmpInf[0])
+    amp_sup[0] = amp_inf[0].copy()
+    h_list = case.generate_2Hamiltonians((amp_inf, amp_sup))
     if case.converge(h_list[0]) and (not case.converge(h_list[1])):
         h_list = case.approach(h_list, dist=case.DistSurf)
         return [2 * h_list[0].f[_] for _ in case.ModesK]
@@ -82,7 +82,7 @@ def compute_cr(epsilon, case):
 
 def compute_line(case):
     print('\033[92m    {} -- line \033[00m'.format(case.__str__()))
-    amps = [coord * case.ModesLine * case.DirLine + (1 - case.ModesLine) * case.DirLine for coord in case.CoordLine]
+    amps = tuple(coord * case.ModesLine * case.DirLine + (1 - case.ModesLine) * case.DirLine for coord in case.CoordLine)
     h_list = case.generate_2Hamiltonians(amps)
     if case.converge(h_list[0]) and (not case.converge(h_list[1])):
         h_list = case.approach(h_list, dist=case.DistSurf, display=True)
