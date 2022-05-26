@@ -10,6 +10,11 @@ Once [`RG_dict.py`](https://github.com/cchandre/RG/blob/main/RG_dict.py) has bee
 ```sh
 python3 RG.py
 ```
+or 
+```sh
+nohup python3 -u RG.py &>RG.out < /dev/null &
+```
+The list of Python packages and their version are specified in [`requirements.txt`](https://github.com/cchandre/RG/blob/main/requirements.txt)
 
 ___
 ##  Parameter dictionary
