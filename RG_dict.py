@@ -11,18 +11,18 @@ Iterates = 50
 #Method = 'surface'
 #Method = 'line'
 Nxy = 125
-DistSurf = 1e-6
+RelDist = 1e-6
 
 ## 2D -- golden mean
-# N = [[1, 1], [1, 0]]
-# omega0 = [(xp.sqrt(5)-1)/2, -1]
-# Omega = [1, 0]
-# K = ((0, 1, 0), (0, 1, 1))
-# AmpInf = [0, 0]
-# AmpSup = [0.04, 0.04]
-# CoordLine = [0.0, 0.028]
-# ModesLine = (1, 1)
-# DirLine = [1, 1]
+N = [[1, 1], [1, 0]]
+omega0 = [(xp.sqrt(5)-1)/2, -1]
+Omega = [1, 0]
+K = ((0, 1, 0), (0, 1, 1))
+AmpInf = [0, 0]
+AmpSup = [0.04, 0.04]
+CoordLine = [0.0, 0.028]
+ModesLine = (1, 1)
+DirLine = [1, 1]
 
 ## 3D -- spiral mean
 # N = [[0, 1, 0], [0, 0, 1], [1, 0, -1]]
@@ -37,19 +37,19 @@ DistSurf = 1e-6
 # DirLine = [1, 5, 0.1]
 
 ## 3D -- tau mean
-N = [[0, 1, -1],[1, -1, 1],[0, -1, 2]]
-tau = 0.445041867912629
-omega0 = [1.0, tau, 1.0 - tau - tau**2]
-Omega = [1, 1, -1]
-K = ((0, 0, -1, 1), (0, 1, -1, -1), (0, 0, 0, 1))
-AmpInf = [0.0, 0.0, 0.01]
-AmpSup = [7e-4, 6e-3, 0.01]
-CoordLine = [0.0, 0.002]
-ModesLine = (1, 1, 0)
-DirLine = [1, 5, 0.01]
+# N = [[0, 1, -1],[1, -1, 1],[0, -1, 2]]
+# tau = 0.445041867912629
+# omega0 = [1.0, tau, 1.0 - tau - tau**2]
+# Omega = [1, 1, -1]
+# K = ((0, 0, -1, 1), (0, 1, -1, -1), (0, 0, 0, 1))
+# AmpInf = [0.0, 0.0, 0.01]
+# AmpSup = [7e-4, 6e-3, 0.01]
+# CoordLine = [0.0, 0.002]
+# ModesLine = (1, 1, 0)
+# DirLine = [1, 5, 0.01]
 
 L = 10
-J = 2
+J = 6
 
 ChoiceIm = 'AK2000'
 Sigma = 0.6
@@ -80,7 +80,7 @@ dict = {'Method': 'compute_' + Method}
 dict.update({
         'Iterates': Iterates,
         'Nxy': Nxy,
-        'DistSurf': DistSurf,
+        'RelDist': RelDist,
         'N': xp.asarray(N, dtype=int),
         'omega0': xp.asarray(omega0, dtype=Precision),
         'Omega': xp.asarray(Omega, dtype=Precision),

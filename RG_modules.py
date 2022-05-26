@@ -55,7 +55,7 @@ def compute_iterates(case):
         while k_ < case.Iterates and h_list[0].error == 0:
             k_ += 1
             start = time.time()
-            h_list = case.approach(h_list, dist=case.DistSurf)
+            h_list = case.approach(h_list, reldist=case.RelDist)
             h_list_ = [case.rg_map(h_list[0]), case.rg_map(h_list[1])]
             if k_ == 1:
                 print('\033[96m          Critical parameter = {:.6f} \033[00m'.format(2.0 * h_list[0].f[case.ModesK[0]]))
@@ -75,7 +75,7 @@ def compute_cr(epsilon, case):
     amp_sup[0] = amp_inf[0].copy()
     h_list = case.generate_2Hamiltonians((amp_inf, amp_sup))
     if case.converge(h_list[0]) and (not case.converge(h_list[1])):
-        h_list = case.approach(h_list, dist=case.DistSurf)
+        h_list = case.approach(h_list, reldist=case.RelDist)
         return [2 * h_list[0].f[_] for _ in case.ModesK]
     else:
         return [2 * h_list[0].f[case.ModesK[0]], xp.nan]
@@ -85,7 +85,7 @@ def compute_line(case):
     amps = tuple(coord * case.ModesLine * case.DirLine + (1 - case.ModesLine) * case.DirLine for coord in case.CoordLine)
     h_list = case.generate_2Hamiltonians(amps)
     if case.converge(h_list[0]) and (not case.converge(h_list[1])):
-        h_list = case.approach(h_list, dist=case.DistSurf, display=True)
+        h_list = case.approach(h_list, reldist=case.RelDist, display=True)
     return h_list
 
 def compute_surface(case):

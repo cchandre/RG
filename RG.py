@@ -279,11 +279,11 @@ class RG:
             h.error = h_.error
             return False
 
-    def approach(self, h_list, dist, display=False):
+    def approach(self, h_list, reldist, display=False):
         h_list_ = copy.deepcopy(h_list)
         for h in h_list_:
             h.error = 0
-        while self.norm_int(h_list_[0] - h_list_[1]) > dist * self.norm(h_lists_[0].f):
+        while self.norm_int(h_list_[0] - h_list_[1]) > reldist * self.norm(h_list_[0].f):
             h_mid = (h_list_[0] + h_list_[1]) * 0.5
             if self.converge(h_mid):
                 h_list_[0] = copy.deepcopy(h_mid)
