@@ -58,16 +58,16 @@ def compute_iterates(case):
             h_list = case.approach(h_list, reldist=case.RelDist)
             h_list_ = [case.rg_map(h_list[0]), case.rg_map(h_list[1])]
             if k == 1:
-                print('\033[96m          Critical parameter = {:.6f} \033[00m'.format(2.0 * h_list[0].f[case.ModesK[0]]))
+                print('\033[96m          \u03B5 = {:.6f} \033[00m'.format(2.0 * h_list[0].f[case.ModesK[0]]))
             plot_fun(case, h_list_[0].f[0])
             mean2_p = 2 * h_list_[0].f[2][case.zero_]
             diff_p = case.norm(xp.abs(h_list[0].f) - xp.abs(h_list_[0].f))
             delta_p = case.norm(xp.abs(h_list_[0].f) - xp.abs(h_list_[1].f)) / case.norm(h_list[0].f - h_list[1].f)
             data.append([diff_p, delta_p, mean2_p])
             h_list = copy.deepcopy(h_list_)
-            print('\033[96m          diff = {:.3e}    delta = {:.7f}   <f\u2082> = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff_p, delta_p, mean2_p, int(time.time()-start)))
+            print('\033[96m          ' + '\u2016' + 'H-R(H)\u2016 = {:.3e}    \u03B4 = {:.7f}   <f\u2082> = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff_p, delta_p, mean2_p, int(time.time()-start)))
             plt.pause(0.5)
-        save_data('iterates', data, timestr, case, info='diff     delta     <f\u2082>', display=True)
+        save_data('iterates', data, timestr, case, info='diff     delta     <f2>', display=True)
 
 def compute_cr(epsilon, case):
     [amp_inf, amp_sup] = [case.AmpInf, case.AmpSup].copy()

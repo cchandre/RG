@@ -114,11 +114,11 @@ class RG:
         y[0][self.Iminus[0]] = h.f[0][self.Iminus[0]] / self.omega0_nu[0][self.Iminus[0]]
         for m in range(1, self.J+1):
             y[m][self.Iminus[m]] = (h.f[m][self.Iminus[m]] - 2 * h.f[2][self.zero_] * self.Omega_nu[0][self.Iminus[m]] * y[m-1][self.Iminus[m]]) / self.omega0_nu[0][self.Iminus[m]]
-        return y, -h.f[1][self.zero_] / (2 * h.f[2][self.zero_]), xp.roll(y * self.J_, -1, axis=0), self.Omega_nu * y, -self.omega0_nu * y
+        return -h.f[1][self.zero_] / (2 * h.f[2][self.zero_]), xp.roll(y * self.J_, -1, axis=0), self.Omega_nu * y, -self.omega0_nu * y
 
     def liouville(self, y, f):
         f_ = self.derivs(f.reshape(self.r_jl))
-        return y[1] * f_[0] + self.conv_product(y[2], f_[1]) - self.conv_product(y[3], f_[0])
+        return y[0] * f_[0] + self.conv_product(y[1], f_[1]) - self.conv_product(y[2], f_[0])
 
     def pnorm(self, y, p=1):
         Ls = lambda f: self.liouville(y, f).flatten()
@@ -158,7 +158,7 @@ class RG:
         m_star, scale = self.compute_m_s(y)
         y_ = [item / scale for item in y]
         for s in range(scale):
-            sh = y_[4] + self.liouville(y_, h_.f)
+            sh = y_[3] + self.liouville(y_, h_.f)
             h_.f += sh
             c1 = self.norm(sh)
             for m in range(2, m_star+1):
@@ -177,7 +177,7 @@ class RG:
         h_ = copy.deepcopy(h)
         h_.error = 0
         y_ = [item * step for item in y]
-        sh = y_[4] + self.liouville(y_, h_.f)
+        sh = y_[3] + self.liouville(y_, h_.f)
         h_.f += sh
         m = 2
         c1 = self.norm(sh)
@@ -235,11 +235,10 @@ class RG:
         f[xp.index_exp[:self.J+1] + self.zero_] = 0.0
         return self.norm(f)
 
-    def sym(self, h, tol=2**-53):
+    def sym(self, h):
         h_ = copy.deepcopy(h)
         h_.f = (h.f + xp.roll(xp.flip(h.f, axis=self.axis_dim), 1, axis=self.axis_dim).conj()) / 2
         h_.f[0][self.zero_] = 0.0
-        h_.f[xp.abs(h_.f) < tol] = 0.0
         return h_
 
     def generate_1Hamiltonian(self, amps, symmetric=False):
