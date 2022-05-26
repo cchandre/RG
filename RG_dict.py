@@ -5,10 +5,10 @@
 import numpy as xp
 
 Method = 'iterates'
-Iterates = 20
+Iterates = 50
 
 Nxy = 125
-RelDist = 1e-7
+RelDist = 1e-8
 
 ## 2D -- golden mean
 N = [[1, 1], [1, 0]]
@@ -45,8 +45,8 @@ DirLine = [1, 1]
 # ModesLine = (1, 1, 0)
 # DirLine = [1, 5, 0.01]
 
-L = 5
-J = 5
+L = 12
+J = 8
 
 ChoiceIm = 'AK2000'
 Sigma = 0.6

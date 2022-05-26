@@ -291,7 +291,7 @@ class RG:
             if display:
                 print('\033[90m               [{:.6f}   {:.6f}] \033[00m'.format(2 * h_list_[0].f[self.ModesK[0]], 2 * h_list_[1].f[self.ModesK[0]]))
         if display:
-            print('\033[96m          Critical parameters = {} \033[00m'.format([2 * h_list_[0].f[k] for k in self.K]))
+            print('\033[96m          \u03B5 = {} \033[00m'.format([2 * h_list_[0].f[k] for k in self.K]))
         h_list_[1].error = 0
         return h_list_
 
