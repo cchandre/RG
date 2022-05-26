@@ -21,7 +21,7 @@ ___
   - 'line': for the family of Hamiltonians defined by the modes *K* in the direction *DirLine* with *ModesLine*=1, determines the critical threshold 
 - *Iterates*: integer; number of iterates to compute for *Method*='iterates'
 - *Nxy*: integer; number of points along each direction for *Method*='surface' or 'region'
-- *DistSurf*: float; distance of approach for the computation of critical values
+- *RelDist*: float; relative distance of approach for the computation of critical values
 ####
 - *N*: *n*x*n* integer matrix with determinant ±1
 - *omega0*: array of *n* floats; frequency vector **&omega;** of the invariant torus; should be an eigenvector of <sup>&dagger;</sup>*N* (transposed matrix of *N*)
@@ -47,6 +47,7 @@ ___
 - *MinStep*: float; minimum value of the steps in the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *AbsTol*: float; absolute tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
 - *RelTol*: float; relative tolerance for the adaptive procedure to compute exponentials (for 'expm_adapt')
+- *MaxLie*: integer; maximum number of Lie transforms to be performed to eliminate the non-resonant part of the perturbation 
 ####
 - *TolMax*: float; value of the norm of the Hamiltonian for divergence
 - *TolMin*: float; value of the norm of the Hamiltonian for convergence 
@@ -64,6 +65,7 @@ ___
 - `0`: all transformations have been properly computed (no error)
 - `1`: one of the Lie transforms is not accurately computed
 - `2`: the series of canonical transformations to eliminate the non-resonant part of the Hamiltonian is diverging
+- `-2`: the series of canonical transformations to eliminate the non-resonant part of the Hamiltonian does not converge or diverge (*MaxLie* iterations reached)
 - `3`: the iterates of the RG map on the initially generated Hamiltonian *H*<sub>1</sub> diverge (*H*<sub>1</sub> is above the critical surface)
 - `-3`: the iterates of the RG map on the initially generated Hamiltonian *H*<sub>2</sub> converge (*H*<sub>2</sub> is below the critical surface)
 - `4`: the step in the adaptive step-size computation of the Lie transform ('expm_adapt') is below the minimum defined step size (*MinStep*)
