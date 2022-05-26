@@ -1,0 +1,5 @@
+numpy==1.21.2
+matplotlib==3.5.1
+scipy==1.7.3
+multiprocess==0.70.12.2
+tqdm==4.64.0
