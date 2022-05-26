@@ -15,10 +15,10 @@ ___
 ##  Parameter dictionary
 
 - *Method*: string; 'iterates', 'surface', 'region', 'line'; choice of method
-  - 'iterates': starting from two Hamiltonians *H*<sub>1</sub> and *H*<sub>2</sub> defined with the modes *K* and amplitudes *AmpInf* and *AmpSup* respectively, the method first refines *H*<sub>1</sub> and *H*<sub>2</sub> close to the critical surface using a dichotomy procedure. Second, it iterates these two Hamiltonians by iterating and refining with the renormalization map. 
+  - 'iterates': starting from two Hamiltonians *H*<sub>1</sub> and *H*<sub>2</sub> defined with the modes *K* and amplitudes *AmpInf* and *AmpSup* respectively, the method first refines *H*<sub>1</sub> and *H*<sub>2</sub> close to the critical surface using a dichotomy procedure. Second, it iterates these two Hamiltonians by iterating and refining with the renormalization map
+  - 'line': for the family of Hamiltonians defined by the modes *K* in the direction *DirLine* with *ModesLine*=1, determines the critical threshold 
   - 'surface': computes the critical surface in the plane of Fourier modes defined by *K* and *ModesLine* (the two modes *K* with *ModesLine*=1)
   - 'region': in the plane of Fourier modes defined by *K* and *ModesLine* (the two modes *K* with *ModesLine*=1) with amplitudes in the range defined by *AmpInf* and *AmpSup*, determines the number of iterations for the Hamiltonian to converge (negative integers) or diverge (positive integers)
-  - 'line': for the family of Hamiltonians defined by the modes *K* in the direction *DirLine* with *ModesLine*=1, determines the critical threshold 
 - *Iterates*: integer; number of iterates to compute for *Method*='iterates'
 - *Nxy*: integer; number of points along each direction for *Method*='surface' or 'region'
 - *RelDist*: float; relative distance of approach for the computation of critical values
@@ -26,7 +26,7 @@ ___
 - *N*: *n*x*n* integer matrix with determinant ±1
 - *omega0*: array of *n* floats; frequency vector **&omega;** of the invariant torus; should be an eigenvector of <sup>&dagger;</sup>*N* (transposed matrix of *N*)
 - *Omega*: array of *n* floats; vector **&Omega;** of the perturation in action
-- *K*: 2-dimensional tuple of integers; wavevectors (j,k<sub>1</sub>,...,k<sub>n</sub>) of the perturbation 
+- *K*: 2-dimensional tuple of integers; wavevectors (j,**&nu;**)=(j,k<sub>1</sub>,...,k<sub>n</sub>) of the perturbation 
 - *AmpInf*: array of *len(K)* floats; minimal amplitudes of the perturbation 
 - *AmpSup*: array of *len(K)* floats; maximum amplitudes of the perturbation
 - *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used in *Method*='line'   
