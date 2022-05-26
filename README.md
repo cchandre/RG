@@ -26,7 +26,7 @@ ___
 - *N*: *n*x*n* integer matrix with determinant ±1
 - *omega0*: array of *n* floats; frequency vector **&omega;** of the invariant torus; should be an eigenvector of <sup>&dagger;</sup>*N* (transposed matrix of *N*)
 - *Omega*: array of *n* floats; vector **&Omega;** of the perturation in action
-- *K*: 2-dimensional tuple of integers; wavevectors (j,k<sub>1</sub>,...,k<sub>n</sub>) of the perturbation 
+- *K*: 2-dimensional tuple of integers; wavevectors (j,**&nu;**)=(j,k<sub>1</sub>,...,k<sub>n</sub>) of the perturbation 
 - *AmpInf*: array of *len(K)* floats; minimal amplitudes of the perturbation 
 - *AmpSup*: array of *len(K)* floats; maximum amplitudes of the perturbation
 - *CoordLine*: 1d array of floats; min and max values of the amplitudes of the potential used in *Method*='line'   
