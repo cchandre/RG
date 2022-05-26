@@ -65,9 +65,9 @@ def compute_iterates(case):
             delta_p = case.norm(xp.abs(h_list_[0].f) - xp.abs(h_list_[1].f)) / case.norm(h_list[0].f - h_list[1].f)
             data.append([diff_p, delta_p, mean2_p])
             h_list = copy.deepcopy(h_list_)
-            print('\033[96m          diff = {:.3e}    delta = {:.7f}   <f2> = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff_p, delta_p, mean2_p, int(time.time()-start)))
+            print('\033[96m          diff = {:.3e}    delta = {:.7f}   <f\u2082> = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff_p, delta_p, mean2_p, int(time.time()-start)))
             plt.pause(0.5)
-        save_data('iterates', data, timestr, case, info='diff     delta     <f2>', display=True)
+        save_data('iterates', data, timestr, case, info='diff     delta     <f\u2082>', display=True)
 
 def compute_cr(epsilon, case):
     [amp_inf, amp_sup] = [case.AmpInf, case.AmpSup].copy()

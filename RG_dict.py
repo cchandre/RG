@@ -11,7 +11,7 @@ Iterates = 50
 #Method = 'surface'
 #Method = 'line'
 Nxy = 125
-RelDist = 1e-6
+RelDist = 1e-8
 
 ## 2D -- golden mean
 N = [[1, 1], [1, 0]]
@@ -62,7 +62,7 @@ RelTol = 1e-3
 
 TolMax = 1e+4
 TolMin = 1e-10
-MaxLie = 500
+MaxLie = 5000
 
 NormChoice = 'sum'
 NormAnalytic = 1

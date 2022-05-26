@@ -28,12 +28,9 @@
 import numpy as xp
 import scipy.sparse.linalg as sla
 import scipy.linalg as la
-import matplotlib.pyplot as plt
 import scipy.signal as sps
 import copy
-import itertools
 import warnings
-# warnings.filterwarnings("ignore")
 from RG_modules import compute_iterates, compute_surface, compute_region, compute_line
 from RG_dict import dict
 
@@ -258,8 +255,10 @@ class RG:
     def generate_2Hamiltonians(self, amps):
         h_list = [self.generate_1Hamiltonian(amp, symmetric=True) for amp in amps]
         if not self.converge(h_list[0]):
+            warnings.warn('Iterates of H\u2081 do not converge')
             h_list[0].error = 3
         if self.converge(h_list[1]):
+            warnings.warn('Iterates of H\u2082 do not diverge')
             h_list[1].error = -3
         else:
             h_list[1].error = 0
