@@ -26,6 +26,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import numpy as xp
+import matplotlib.pyplot as plt
 import scipy.sparse.linalg as sla
 import scipy.linalg as la
 import scipy.signal as sps

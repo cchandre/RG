@@ -7,11 +7,8 @@ import numpy as xp
 Method = 'iterates'
 Iterates = 50
 
-#Method = 'region'
-#Method = 'surface'
-#Method = 'line'
 Nxy = 125
-RelDist = 1e-8
+RelDist = 1e-10
 
 ## 2D -- golden mean
 N = [[1, 1], [1, 0]]

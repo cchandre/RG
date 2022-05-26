@@ -51,13 +51,13 @@ def compute_iterates(case):
     if h_list[0].error == 0 and h_list[1].error == 0:
         timestr = time.strftime("%Y%m%d_%H%M")
         plot_fun(case, h_list[1].f[0])
-        k_, data = 0, []
-        while k_ < case.Iterates and h_list[0].error == 0:
-            k_ += 1
+        k, data = 0, []
+        while k < case.Iterates and h_list[0].error == 0:
+            k += 1
             start = time.time()
             h_list = case.approach(h_list, reldist=case.RelDist)
             h_list_ = [case.rg_map(h_list[0]), case.rg_map(h_list[1])]
-            if k_ == 1:
+            if k == 1:
                 print('\033[96m          Critical parameter = {:.6f} \033[00m'.format(2.0 * h_list[0].f[case.ModesK[0]]))
             plot_fun(case, h_list_[0].f[0])
             mean2_p = 2 * h_list_[0].f[2][case.zero_]
