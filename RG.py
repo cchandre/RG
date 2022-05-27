@@ -65,7 +65,7 @@ class RG:
         self.conv_dim = xp.index_exp[:self.J+1] + self.dim * xp.index_exp[self.L:3*self.L+1]
         indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),)
         self.nu = xp.meshgrid(*indx, indexing='ij')
-        eigenval, w_eig = la.eig(self.N.transpose())
+        eigenval, w_eig = la.eig(self.N.T)
         self.Eigenvalue = xp.real(eigenval[xp.abs(eigenval) < 1])[0]
         N_nu = xp.sign(self.Eigenvalue).astype(int) * xp.einsum('ij,j...->i...', self.N, self.nu)
         self.omega0_nu = xp.einsum('i,i...->...', self.omega0, self.nu).reshape(self.r_1l)
@@ -97,8 +97,7 @@ class RG:
             }.get(self.NormChoice, lambda _: xp.abs(_).sum())
         matfile = scipy.io.loadmat('theta_taylor.mat')
         array = xp.asarray(matfile['theta'][0])
-        keys = xp.arange(1, len(array) + 1)
-        self.theta = dict(zip(keys, array.T))
+        self.theta = dict(zip(xp.arange(1, len(array) + 1), array.T))
 
     def conv_product(self, fun1, fun2):
         fun1_ = xp.roll(fun1, self.L_, axis=self.axis_dim)
@@ -128,7 +127,8 @@ class RG:
         p_low, p_high = int(xp.floor(sqrt_m_max)), int(xp.ceil(sqrt_m_max + 1))
         return max(p for p in range(p_low, p_high +1) if p * (p - 1) <= m_max + 1)
 
-    def compute_m_s(self, y, n0=1, tol=2**-53, m_max=55, ell=2):
+    def compute_m_s(self, y, n0=1, tol=2**-53, ell=2):
+        m_max=len(self.theta)
         best_m, best_s = None, None
         norm_ls = self.pnorm(y)
         p_max = self.compute_p_max(m_max)
@@ -207,7 +207,7 @@ class RG:
     def rg_map(self, h):
         h_ = copy.deepcopy(h)
         h_.error = 0
-        Omega_ = (self.N.transpose()).dot(h_.Omega)
+        Omega_ = self.N.T.dot(h_.Omega)
         ren = (2 * la.norm(Omega_) / self.Eigenvalue * h_.f[2][self.zero_])**(2 - xp.arange(self.J+1, dtype=int)) / (2 * h_.f[2][self.zero_])
         h_.Omega = Omega_ / la.norm(Omega_)
         self.Omega_nu = xp.einsum('i,i...->...', h_.Omega, self.nu).reshape(self.r_1l)
@@ -226,6 +226,20 @@ class RG:
             warnings.warn('Maximum number of Lie transforms reached (MaxLie)')
             h_.error = -2
         return h_
+
+    def eigenvalues(self, h, dx, n=1):
+        h_ = copy.deepcopy(h)
+        f = h_.f.flatten()
+        jac = xp.empty((self.vecjl, self.vecjl))
+        for _ in range(self.vecjl):
+            delta = xp.zeros_like(f)
+            delta[_] = dx
+            h_.f = (f + delta).reshape(self.r_jl)
+            f_ = self.rg_map(h_).f.flatten()
+            jac[_] = (f_ - f) / dx
+        eigs = la.eigvals(jac)
+        eigs = eigs[xp.argsort(xp.abs(eigs))]
+        return eigs[-n:]
 
     def norm_int(self, h):
         f = h.f.copy()

@@ -62,11 +62,12 @@ def compute_iterates(case):
             plot_fun(case, h_list_[0].f[0])
             diff = case.norm(xp.abs(h_list[0].f) - xp.abs(h_list_[0].f))
             delta = case.norm(xp.abs(h_list_[0].f) - xp.abs(h_list_[1].f)) / case.norm(h_list[0].f - h_list[1].f)
-            lam = 2 * h_list_[0].f[2][case.zero_] * (((case.N.transpose()).dot(h_list_[0].Omega))**2).sum() / xp.abs(case.Eigenvalue)
+            lam = 2 * h_list_[0].f[2][case.zero_] * ((case.N.T.dot(h_list_[0].Omega))**2).sum() / xp.abs(case.Eigenvalue)
             data.append([diff, delta, lam])
             h_list = copy.deepcopy(h_list_)
             print('\033[96m          ' + '\u2016' + 'H-R(H)\u2016 = {:.3e}    \u03B4 = {:.7f}   \u03BB = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff, delta, lam, int(time.time()-start)))
             plt.pause(0.5)
+        # print(case.eigenvalues(h_list[0], 1e-10, 5)) 
         save_data('iterates', data, timestr, case, info='diff     delta     lambda', display=True)
 
 def compute_cr(epsilon, case):
@@ -106,7 +107,7 @@ def compute_surface(case):
         for _ in tqdm(epsilon):
             result = compute_cr(_, case)
             data.append(result)
-    data = xp.array(data).transpose()
+    data = xp.array(data).T
     save_data('surface', data, timestr, case, display=True)
     if case.PlotResults:
         fig, ax = plt.subplots(1, 1)
@@ -174,7 +175,7 @@ def save_data(name, data, timestr, case, info=[], display=False):
 def plot_fun(case, fun):
     if case.dim == 2 and case.PlotResults:
         fig, ax = plt.subplots(1,1)
-        im = ax.imshow(xp.abs(xp.roll(fun, (case.L, case.L), axis=(0,1))).transpose(), origin='lower', extent=[-case.L, case.L, -case.L, case.L], norm=colors.LogNorm(vmin=case.TolMin, vmax=xp.abs(fun).max()), cmap='hot_r')
+        im = ax.imshow(xp.abs(xp.roll(fun, (case.L, case.L), axis=(0,1))).T, origin='lower', extent=[-case.L, case.L, -case.L, case.L], norm=colors.LogNorm(vmin=case.TolMin, vmax=xp.abs(fun).max()), cmap='hot_r')
         fig.colorbar(im, orientation='vertical')
         ax.set_xlim(-case.L, case.L)
         ax.set_ylim(-case.L, case.L)

@@ -5,7 +5,7 @@
 import numpy as xp
 
 Method = 'iterates'
-Iterates = 50
+Iterates = 20
 
 Nxy = 125
 RelDist = 1e-7
