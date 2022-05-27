@@ -8,7 +8,7 @@ Method = 'iterates'
 Iterates = 50
 
 Nxy = 125
-RelDist = 1e-8
+RelDist = 1e-7
 
 ## 2D -- golden mean
 N = [[1, 1], [1, 0]]
@@ -45,8 +45,8 @@ DirLine = [1, 1]
 # ModesLine = (1, 1, 0)
 # DirLine = [1, 5, 0.01]
 
-L = 12
-J = 8
+L = 5
+J = 5
 
 ChoiceIm = 'AK2000'
 Sigma = 0.6

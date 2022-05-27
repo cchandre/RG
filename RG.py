@@ -65,7 +65,7 @@ class RG:
         indx = self.dim * (xp.hstack((xp.arange(0, self.L+1), xp.arange(-self.L, 0))),)
         self.nu = xp.meshgrid(*indx, indexing='ij')
         eigenval, w_eig = la.eig(self.N.transpose())
-        self.Eigenvalue = xp.real(eigenval[xp.abs(eigenval) < 1])
+        self.Eigenvalue = xp.real(eigenval[xp.abs(eigenval) < 1])[0]
         N_nu = xp.sign(self.Eigenvalue).astype(int) * xp.einsum('ij,j...->i...', self.N, self.nu)
         self.omega0_nu = xp.einsum('i,i...->...', self.omega0, self.nu).reshape(self.r_1l)
         self.Omega_nu = xp.einsum('i,i...->...', self.Omega, self.nu).reshape(self.r_1l)
