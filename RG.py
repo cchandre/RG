@@ -30,13 +30,14 @@ import matplotlib.pyplot as plt
 import scipy.sparse.linalg as sla
 import scipy.linalg as la
 import scipy.signal as sps
+import scipy.io
 import copy
 import warnings
 from RG_modules import compute_iterates, compute_surface, compute_region, compute_line
-from RG_dict import dict
+from RG_dict import param_dict
 
 def main():
-    case = RG(dict)
+    case = RG(param_dict)
     eval(case.Method + '(case)')
     plt.show()
 
@@ -47,10 +48,10 @@ class RG:
     def __str__(self):
         return '{}D renormalization with N = {}'.format(self.dim, self.N.tolist())
 
-    def __init__(self, dict_param):
-        for key in dict_param:
-            setattr(self, key, dict_param[key])
-        self.DictParams = dict_param
+    def __init__(self, parameters):
+        for key in parameters:
+            setattr(self, key, parameters[key])
+        self.DictParams = parameters
         self.dim = len(self.omega0)
         self.zero_ = self.dim * (0,)
         self.one_ = self.dim * (1,)
@@ -94,14 +95,10 @@ class RG:
             'Euclidean': lambda _: xp.sqrt((xp.abs(_)**2).sum()),
             'Analytic': lambda _: xp.exp(xp.log(xp.abs(_)) + self.NormAnalytic * xp.sum(xp.abs(self.nu), axis=0).reshape(self.r_1l)).max()
             }.get(self.NormChoice, lambda _: xp.abs(_).sum())
-        self.theta = {
-                    1: 2.29e-16, 2: 2.58e-8, 3: 1.39e-5, 4: 3.40e-4, 5: 2.40e-3,
-                    6: 9.07e-3, 7: 2.38e-2, 8: 5.00e-2, 9: 8.96e-2, 10: 1.44e-1,
-                    11: 2.14e-1, 12: 3.00e-1, 13: 4.00e-1, 14: 5.14e-1, 15: 6.41e-1,
-                    16: 7.81e-1, 17: 9.31e-1, 18: 1.09, 19: 1.26, 20: 1.44, 21: 1.62,
-                    22: 1.82, 23: 2.01, 24: 2.22, 25: 2.43, 26: 2.64, 27: 2.86,
-                    28: 3.08, 29: 3.31, 30: 3.54, 35: 4.7, 40: 6.0, 45: 7.2,
-                    50: 8.5, 55: 9.9}
+        matfile = scipy.io.loadmat('theta_taylor.mat')
+        array = xp.asarray(matfile['theta'][0])
+        keys = xp.arange(1, len(array) + 1)
+        self.theta = dict(zip(keys, array.T))
 
     def conv_product(self, fun1, fun2):
         fun1_ = xp.roll(fun1, self.L_, axis=self.axis_dim)

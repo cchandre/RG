@@ -62,7 +62,7 @@ def compute_iterates(case):
             plot_fun(case, h_list_[0].f[0])
             diff = case.norm(xp.abs(h_list[0].f) - xp.abs(h_list_[0].f))
             delta = case.norm(xp.abs(h_list_[0].f) - xp.abs(h_list_[1].f)) / case.norm(h_list[0].f - h_list[1].f)
-            lam = 2 * h_list_[0].f[2][case.zero_] * (((case.N.transpose()).dot(h_list_[0].Omega))**2).sum() / case.Eigenvalue
+            lam = 2 * h_list_[0].f[2][case.zero_] * (((case.N.transpose()).dot(h_list_[0].Omega))**2).sum() / xp.abs(case.Eigenvalue)
             data.append([diff, delta, lam])
             h_list = copy.deepcopy(h_list_)
             print('\033[96m          ' + '\u2016' + 'H-R(H)\u2016 = {:.3e}    \u03B4 = {:.7f}   \u03BB = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff, delta, lam, int(time.time()-start)))

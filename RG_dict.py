@@ -73,8 +73,8 @@ Parallelization = (False, 5)
 ##                              DO NOT EDIT BELOW                                               ##
 ##################################################################################################
 Precision = {32: xp.float32, 64: xp.float64, 128: xp.float128}.get(Precision, xp.float64)
-dict = {'Method': 'compute_' + Method}
-dict.update({
+param_dict = {'Method': 'compute_' + Method}
+param_dict.update({
         'Iterates': Iterates,
         'Nxy': Nxy,
         'RelDist': RelDist,
