@@ -235,7 +235,7 @@ class RG:
             delta = xp.zeros_like(f)
             delta[_] = dx
             h_.f = (f + delta).reshape(self.r_jl)
-            f_ = self.rg_map(h_).f.flatten()
+            f_ = self.rg_map(self.sym(h_)).f.flatten()
             jac[_] = (f_ - f) / dx
         eigs = la.eigvals(jac)
         eigs = eigs[xp.argsort(xp.abs(eigs))]

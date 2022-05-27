@@ -67,7 +67,7 @@ def compute_iterates(case):
             h_list = copy.deepcopy(h_list_)
             print('\033[96m          ' + '\u2016' + 'H-R(H)\u2016 = {:.3e}    \u03B4 = {:.7f}   \u03BB = {:.7f}    (done in {:d} seconds) \033[00m'.format(diff, delta, lam, int(time.time()-start)))
             plt.pause(0.5)
-        # print(case.eigenvalues(h_list[0], 1e-10, 5)) 
+        print(case.eigenvalues(h_list[0], 1e-10, 5)) 
         save_data('iterates', data, timestr, case, info='diff     delta     lambda', display=True)
 
 def compute_cr(epsilon, case):
