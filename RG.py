@@ -227,13 +227,12 @@ class RG:
             h_.error = -2
         return h_
 
-    def eigenvalues(self, h, dx, n=1, subspace):
+    def eigenvalues(self, h, dx, n=1):
         h_ = copy.deepcopy(h)
         f = h.f.flatten()
-		vecjl = (subspace[0]+1) * subspace[1]**self.dim - 1
-        jac = xp.empty((vecjl, vecjl))
-        for _ in range(1, vecjl+1):
-            delta = xp.zeros_like(f)
+        jac = xp.empty((self.vecjl, self.vecjl))
+        for _ in range(self.vecjl):
+            delta = xp.zeros(self.vecjl)
             delta[_] = dx
             h_.f = h.f + self.sym(delta.reshape(self.r_jl))
             f_ = self.rg_map(h_).f.flatten()
