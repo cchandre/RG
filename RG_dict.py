@@ -4,10 +4,10 @@
 
 import numpy as xp
 
-Method = 'iterates'
+Method = 'region'
 Iterates = 20
 
-Nxy = 125
+Nxy = 500
 RelDist = 1e-7
 
 ## 2D -- golden mean
@@ -16,7 +16,7 @@ omega0 = [(xp.sqrt(5)-1)/2, -1]
 Omega = [1, 0]
 K = ((0, 1, 0), (0, 1, 1))
 AmpInf = [0, 0]
-AmpSup = [0.04, 0.04]
+AmpSup = [0.12, 0.35]
 CoordLine = [0.0, 0.028]
 ModesLine = (1, 1)
 DirLine = [1, 1]
@@ -65,9 +65,9 @@ NormChoice = 'sum'
 NormAnalytic = 1
 Precision = 64
 
-SaveData = False
+SaveData = True
 PlotResults = False
-Parallelization = (False, 5)
+Parallelization = (True, 100)
 
 ##################################################################################################
 ##                              DO NOT EDIT BELOW                                               ##
