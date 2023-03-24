@@ -92,15 +92,18 @@ References:
          url = {https://www.sciencedirect.com/science/article/pii/S0370157301000941}, 
 }
 ```
-- A.P Bustamante, C. Chandre, *Numerical computation of critical surfaces for the breakup of invariant tori in Hamiltonian systems*, [arXiv:2109.12235](https://arxiv.org/abs/2109.12235)
+- A.P Bustamante, C. Chandre, *Numerical computation of critical surfaces for the breakup of invariant tori in Hamiltonian systems*, [SIAM Journal on Applied Dynamical Systems](https://doi.org/10.1137/21M1448501) 22, 483 (2023)
 ```bibtex
-@misc{bustamante2021,
+@article{bustamante2023,
       title = {Numerical computation of critical surfaces for the breakup of invariant tori in Hamiltonian systems}, 
       author = {Adrian P. Bustamante and Cristel Chandre},
-      year = {2021},
-      eprint = {2109.12235},
-      archivePrefix = {arXiv},
-      primaryClass = {math.DS}
+      journal = {SIAM Journal on Applied Dynamical Systems},
+      volume = {22},
+      number = {1},
+      pages = {483-500},
+      year = {2023},
+      issn = {1536-0040},
+      doi = {https://doi.org/10.1137/21M1448501},
 }
 ```
 For more information: <cristel.chandre@cnrs.fr>
